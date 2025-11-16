@@ -1,11 +1,13 @@
+import { useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { CreateProjectDialog } from "@/components/CreateProjectDialog";
 import { Plus, Eye, Pencil, Trash2, Users, FolderKanban, DollarSign, ShoppingCart } from "lucide-react";
 
-const projects = [
+const initialProjects = [
   {
     id: 1,
     name: "Shivam Enterprises Project",
@@ -27,6 +29,22 @@ const projects = [
 ];
 
 const Projects = () => {
+  const [projects, setProjects] = useState(initialProjects);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleProjectCreated = (newProject: { projectName: string; clientName: string }) => {
+    const project = {
+      id: projects.length + 1,
+      name: newProject.projectName,
+      client: newProject.clientName,
+      status: "Active" as const,
+      orders: 0,
+      budget: "₹0",
+      createdDate: new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
+    };
+    setProjects([...projects, project]);
+  };
+
   const totalProjects = projects.length;
   const totalBudget = "₹63,18,427";
   const totalOrders = projects.reduce((sum, p) => sum + p.orders, 0);
@@ -43,7 +61,10 @@ const Projects = () => {
               <h1 className="text-3xl font-bold text-foreground mb-2">Projects</h1>
               <p className="text-muted-foreground">Manage your construction projects and track progress</p>
             </div>
-            <Button className="bg-primary hover:bg-primary/90 gap-2">
+            <Button 
+              className="bg-primary hover:bg-primary/90 gap-2"
+              onClick={() => setIsDialogOpen(true)}
+            >
               <Plus className="w-5 h-5" />
               Add Project
             </Button>
@@ -136,6 +157,12 @@ const Projects = () => {
           </div>
         </div>
       </main>
+
+      <CreateProjectDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onProjectCreated={handleProjectCreated}
+      />
     </div>
   );
 };
