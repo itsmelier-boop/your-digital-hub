@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
@@ -29,6 +30,7 @@ const initialProjects = [
 ];
 
 const Projects = () => {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState(initialProjects);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -43,6 +45,10 @@ const Projects = () => {
       createdDate: new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
     };
     setProjects([...projects, project]);
+  };
+
+  const handleViewDetails = (projectId: number) => {
+    navigate(`/projects/${projectId}`);
   };
 
   const totalProjects = projects.length;
@@ -98,7 +104,12 @@ const Projects = () => {
                 </div>
 
                 <div className="flex items-center gap-2 mb-4">
-                  <Button variant="outline" size="sm" className="flex-1 gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1 gap-2"
+                    onClick={() => handleViewDetails(project.id)}
+                  >
                     <Eye className="w-4 h-4" />
                     View Details
                   </Button>
