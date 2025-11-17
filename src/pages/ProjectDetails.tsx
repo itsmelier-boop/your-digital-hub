@@ -14,78 +14,65 @@ const projectsData = {
     id: 1,
     name: "Shivam Enterprises Project",
     client: "Shivam Enterprises",
-    orders: [
-      {
-        id: "ORD-001",
-        name: "Main Construction Work",
-        description: "Primary construction activities including structure, piping and cable tray work",
-        status: "Active",
-        items: 2,
-        amount: "₹60,25,000",
-        createdDate: "10/18/2025"
-      }
-    ]
+    orders: [{
+      id: "ORD-001",
+      name: "Main Construction Work",
+      description: "Primary construction activities including structure, piping and cable tray work",
+      status: "Active",
+      items: 2,
+      amount: "₹60,25,000",
+      createdDate: "10/18/2025"
+    }]
   },
   "2": {
     id: 2,
     name: "FG",
     client: "DCV",
-    orders: [
-      {
-        id: "ORD-002",
-        name: "Initial Setup Work",
-        description: "Foundation and basic infrastructure setup",
-        status: "Active",
-        items: 1,
-        amount: "₹2,93,427",
-        createdDate: "11/9/2025"
-      }
-    ]
+    orders: [{
+      id: "ORD-002",
+      name: "Initial Setup Work",
+      description: "Foundation and basic infrastructure setup",
+      status: "Active",
+      items: 1,
+      amount: "₹2,93,427",
+      createdDate: "11/9/2025"
+    }]
   }
 };
-
 const ProjectDetails = () => {
-  const { projectId } = useParams<{ projectId: string }>();
+  const {
+    projectId
+  } = useParams<{
+    projectId: string;
+  }>();
   const navigate = useNavigate();
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
-  
   const projectData = projectsData[projectId as keyof typeof projectsData];
   const [orders, setOrders] = useState(projectData?.orders || []);
-
   if (!projectData) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+    return <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground mb-2">Project Not Found</h1>
           <Button onClick={() => navigate("/projects")}>Back to Projects</Button>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   const handleOrderCreated = (newOrder: any) => {
-    setOrders((prevOrders) => [...prevOrders, newOrder]);
+    setOrders(prevOrders => [...prevOrders, newOrder]);
   };
-
   const totalOrders = orders.length;
   const totalAmount = orders.reduce((sum, order) => {
     const amount = parseInt(order.amount.replace(/[₹,]/g, ""));
     return sum + amount;
   }, 0);
   const totalItems = orders.reduce((sum, order) => sum + order.items, 0);
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <Sidebar />
       <Header />
       
       <main className="ml-64 pt-16">
         <div className="p-8">
-          <Button
-            variant="ghost"
-            className="mb-6 -ml-2 text-muted-foreground hover:text-foreground"
-            onClick={() => navigate("/projects")}
-          >
+          <Button variant="ghost" className="mb-6 -ml-2 text-muted-foreground hover:text-foreground" onClick={() => navigate("/projects")}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Projects
           </Button>
@@ -95,25 +82,21 @@ const ProjectDetails = () => {
               <h1 className="text-3xl font-bold text-foreground mb-2">{projectData.name}</h1>
               <p className="text-muted-foreground">Orders for {projectData.client}</p>
             </div>
-            <Button 
-              className="bg-primary hover:bg-primary/90 gap-2"
-              onClick={() => setIsOrderDialogOpen(true)}
-            >
+            <Button className="bg-primary hover:bg-primary/90 gap-2" onClick={() => setIsOrderDialogOpen(true)}>
               <Plus className="w-5 h-5" />
               Add Order
             </Button>
           </div>
 
           <div className="space-y-6 mb-8">
-            {orders.map((order) => (
-              <Card key={order.id} className="p-6 hover:shadow-lg transition-shadow">
+            {orders.map(order => <Card key={order.id} className="p-6 hover:shadow-lg transition-shadow">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="text-xl font-semibold text-foreground">{order.name}</h3>
                       <Badge className="bg-success text-success-foreground">{order.status}</Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-1">Order #{order.id}</p>
+                    
                     <p className="text-sm text-muted-foreground">{order.description}</p>
                   </div>
                 </div>
@@ -130,12 +113,7 @@ const ProjectDetails = () => {
                 </div>
 
                 <div className="flex items-center gap-2 mb-4">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1 gap-2"
-                    onClick={() => navigate(`/projects/${projectId}/orders/${order.id}`)}
-                  >
+                  <Button variant="outline" size="sm" className="flex-1 gap-2" onClick={() => navigate(`/projects/${projectId}/orders/${order.id}`)}>
                     <Eye className="w-4 h-4" />
                     View Items
                   </Button>
@@ -151,8 +129,7 @@ const ProjectDetails = () => {
                 <div className="pt-4 border-t border-border">
                   <p className="text-xs text-muted-foreground">Created {order.createdDate}</p>
                 </div>
-              </Card>
-            ))}
+              </Card>)}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -195,13 +172,7 @@ const ProjectDetails = () => {
         </div>
       </main>
 
-      <CreateOrderDialog
-        open={isOrderDialogOpen}
-        onOpenChange={setIsOrderDialogOpen}
-        onOrderCreated={handleOrderCreated}
-      />
-    </div>
-  );
+      <CreateOrderDialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen} onOrderCreated={handleOrderCreated} />
+    </div>;
 };
-
 export default ProjectDetails;
