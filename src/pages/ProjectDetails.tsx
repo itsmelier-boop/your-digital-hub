@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, Eye, Pencil, Trash2, FileText, DollarSign, Package } from "lucide-react";
+import { CreateOrderDialog } from "@/components/CreateOrderDialog";
 
 // Mock data - in a real app, this would come from a database/API
 const projectsData = {
@@ -46,10 +47,12 @@ const projectsData = {
 const ProjectDetails = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
+  const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
   
-  const project = projectsData[projectId as keyof typeof projectsData];
+  const projectData = projectsData[projectId as keyof typeof projectsData];
+  const [orders, setOrders] = useState(projectData?.orders || []);
 
-  if (!project) {
+  if (!projectData) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -60,12 +63,16 @@ const ProjectDetails = () => {
     );
   }
 
-  const totalOrders = project.orders.length;
-  const totalAmount = project.orders.reduce((sum, order) => {
+  const handleOrderCreated = (newOrder: any) => {
+    setOrders((prevOrders) => [...prevOrders, newOrder]);
+  };
+
+  const totalOrders = orders.length;
+  const totalAmount = orders.reduce((sum, order) => {
     const amount = parseInt(order.amount.replace(/[₹,]/g, ""));
     return sum + amount;
   }, 0);
-  const totalItems = project.orders.reduce((sum, order) => sum + order.items, 0);
+  const totalItems = orders.reduce((sum, order) => sum + order.items, 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -85,17 +92,20 @@ const ProjectDetails = () => {
 
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">{project.name}</h1>
-              <p className="text-muted-foreground">Orders for {project.client}</p>
+              <h1 className="text-3xl font-bold text-foreground mb-2">{projectData.name}</h1>
+              <p className="text-muted-foreground">Orders for {projectData.client}</p>
             </div>
-            <Button className="bg-primary hover:bg-primary/90 gap-2">
+            <Button 
+              className="bg-primary hover:bg-primary/90 gap-2"
+              onClick={() => setIsOrderDialogOpen(true)}
+            >
               <Plus className="w-5 h-5" />
               Add Order
             </Button>
           </div>
 
           <div className="space-y-6 mb-8">
-            {project.orders.map((order) => (
+            {orders.map((order) => (
               <Card key={order.id} className="p-6 hover:shadow-lg transition-shadow">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
@@ -179,6 +189,12 @@ const ProjectDetails = () => {
           </div>
         </div>
       </main>
+
+      <CreateOrderDialog
+        open={isOrderDialogOpen}
+        onOpenChange={setIsOrderDialogOpen}
+        onOrderCreated={handleOrderCreated}
+      />
     </div>
   );
 };
