@@ -130,7 +130,12 @@ const ProjectDetails = () => {
                 </div>
 
                 <div className="flex items-center gap-2 mb-4">
-                  <Button variant="outline" size="sm" className="flex-1 gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1 gap-2"
+                    onClick={() => navigate(`/projects/${projectId}/orders/${order.id}`)}
+                  >
                     <Eye className="w-4 h-4" />
                     View Items
                   </Button>
