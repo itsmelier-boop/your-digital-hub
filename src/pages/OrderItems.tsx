@@ -4,7 +4,8 @@ import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Package } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Plus, Package, Pencil, Trash2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -12,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CreateItemDialog } from "@/components/CreateItemDialog";
 
 // Mock data - in a real app, this would come from a database/API
 const ordersData = {
@@ -37,8 +39,10 @@ const OrderItems = () => {
   const [department, setDepartment] = useState("all");
   const [sortBy, setSortBy] = useState("description");
   const [order, setOrder] = useState("ascending");
+  const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
 
   const orderData = ordersData[orderId as keyof typeof ordersData];
+  const [items, setItems] = useState(orderData?.items || []);
 
   if (!orderData) {
     return (
@@ -51,7 +55,30 @@ const OrderItems = () => {
     );
   }
 
-  const items = orderData.items || [];
+  const handleItemCreated = (newItem: any) => {
+    setItems((prevItems) => [...prevItems, newItem]);
+  };
+
+  const filteredItems = items.filter((item: any) => {
+    if (department === "all") return true;
+    return item.department?.toLowerCase() === department.toLowerCase();
+  });
+
+  const sortedItems = [...filteredItems].sort((a: any, b: any) => {
+    let comparison = 0;
+    
+    if (sortBy === "description") {
+      comparison = a.description.localeCompare(b.description);
+    } else if (sortBy === "amount") {
+      comparison = a.amount - b.amount;
+    } else if (sortBy === "quantity") {
+      comparison = a.quantity - b.quantity;
+    } else if (sortBy === "date") {
+      comparison = new Date(a.createdDate).getTime() - new Date(b.createdDate).getTime();
+    }
+    
+    return order === "ascending" ? comparison : -comparison;
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -74,7 +101,10 @@ const OrderItems = () => {
               <h1 className="text-3xl font-bold text-foreground mb-2">{orderData.name}</h1>
               <p className="text-muted-foreground">Order #{orderId} • {orderData.projectName}</p>
             </div>
-            <Button className="bg-primary hover:bg-primary/90 gap-2">
+            <Button 
+              className="bg-primary hover:bg-primary/90 gap-2"
+              onClick={() => setIsItemDialogOpen(true)}
+            >
               <Plus className="w-5 h-5" />
               Add Item
             </Button>
@@ -139,7 +169,7 @@ const OrderItems = () => {
             </div>
           </Card>
 
-          {items.length === 0 ? (
+          {sortedItems.length === 0 ? (
             <Card className="p-12">
               <div className="flex flex-col items-center justify-center text-center">
                 <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-6">
@@ -149,7 +179,10 @@ const OrderItems = () => {
                 <p className="text-muted-foreground mb-8 max-w-md">
                   Add work items to this order to start tracking measurements and billing.
                 </p>
-                <Button className="bg-primary hover:bg-primary/90 gap-2">
+                <Button 
+                  className="bg-primary hover:bg-primary/90 gap-2"
+                  onClick={() => setIsItemDialogOpen(true)}
+                >
                   <Plus className="w-5 h-5" />
                   Add First Item
                 </Button>
@@ -157,15 +190,77 @@ const OrderItems = () => {
             </Card>
           ) : (
             <div className="space-y-4">
-              {items.map((item: any) => (
-                <Card key={item.id} className="p-6">
-                  <p>Item content here</p>
+              {sortedItems.map((item: any) => (
+                <Card key={item.id} className="p-6 hover:shadow-lg transition-shadow">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-lg font-semibold text-foreground">
+                          {item.description}
+                        </h3>
+                        {item.code && (
+                          <Badge variant="outline" className="text-xs">
+                            {item.code}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {item.department} • {item.quantity} {item.unitOfMeasurement}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-bold text-primary">
+                        ₹{item.amount.toLocaleString('en-IN')}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        @ ₹{item.unitRate.toLocaleString('en-IN')}/{item.unitOfMeasurement}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <p className="text-sm font-medium text-foreground mb-2">Billing Breakup:</p>
+                    <div className="space-y-1">
+                      {item.milestones.map((milestone: any) => (
+                        <div key={milestone.id} className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">{milestone.name}</span>
+                          <span className="font-medium">{milestone.percentage}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 mb-4">
+                    <Button variant="outline" size="sm" className="flex-1 gap-2">
+                      <Pencil className="w-4 h-4" />
+                      Edit
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  <div className="pt-4 border-t border-border">
+                    <p className="text-xs text-muted-foreground">
+                      Added on {item.createdDate}
+                    </p>
+                  </div>
                 </Card>
               ))}
             </div>
           )}
         </div>
       </main>
+
+      <CreateItemDialog
+        open={isItemDialogOpen}
+        onOpenChange={setIsItemDialogOpen}
+        onItemCreated={handleItemCreated}
+      />
     </div>
   );
 };
