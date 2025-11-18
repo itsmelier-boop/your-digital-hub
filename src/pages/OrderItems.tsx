@@ -263,7 +263,14 @@ const OrderItems = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-center gap-1">
-                            <Button variant="outline" size="sm" className="h-8 gap-1.5">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 gap-1.5"
+                              onClick={() => navigate(`/projects/${projectId}/orders/${orderId}/items/${item.id}/measure`, { 
+                                state: { item } 
+                              })}
+                            >
                               <Eye className="w-3.5 h-3.5" />
                               Measure
                             </Button>
