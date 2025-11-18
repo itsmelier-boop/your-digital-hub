@@ -165,12 +165,22 @@ export const CreateItemDialog = ({
               <Label htmlFor="department">
                 Department <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="department"
-                placeholder="Type department name"
-                required
-                {...register("department", { required: true })}
-              />
+              <Select
+                onValueChange={(value) => setValue("department", value)}
+                defaultValue={watch("department")}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent className="bg-background">
+                  <SelectItem value="Structure">Structure</SelectItem>
+                  <SelectItem value="Piping-LHS">Piping-LHS</SelectItem>
+                  <SelectItem value="Piping-Spool Status">Piping-Spool Status</SelectItem>
+                  <SelectItem value="Piping Insulation">Piping Insulation</SelectItem>
+                  <SelectItem value="Equipment Insulation">Equipment Insulation</SelectItem>
+                  <SelectItem value="Others">Others</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
