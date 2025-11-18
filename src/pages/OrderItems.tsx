@@ -146,10 +146,12 @@ const OrderItems = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Departments</SelectItem>
-                    <SelectItem value="construction">Construction</SelectItem>
-                    <SelectItem value="electrical">Electrical</SelectItem>
-                    <SelectItem value="plumbing">Plumbing</SelectItem>
-                    <SelectItem value="hvac">HVAC</SelectItem>
+                    <SelectItem value="Structure">Structure</SelectItem>
+                    <SelectItem value="Piping-LHS">Piping-LHS</SelectItem>
+                    <SelectItem value="Piping-Spool Status">Piping-Spool Status</SelectItem>
+                    <SelectItem value="Piping Insulation">Piping Insulation</SelectItem>
+                    <SelectItem value="Equipment Insulation">Equipment Insulation</SelectItem>
+                    <SelectItem value="Others">Others</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
