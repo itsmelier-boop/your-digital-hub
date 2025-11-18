@@ -5,7 +5,7 @@ import { Header } from "@/components/Header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Package, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Package, Pencil, Trash2, Eye, DollarSign, Boxes } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -14,6 +14,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CreateItemDialog } from "@/components/CreateItemDialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 // Mock data - in a real app, this would come from a database/API
 const ordersData = {
@@ -79,6 +87,17 @@ const OrderItems = () => {
     
     return order === "ascending" ? comparison : -comparison;
   });
+
+  const totalAmount = items.reduce((sum: number, item: any) => sum + item.amount, 0);
+  const uniqueDepartments = new Set(items.map((item: any) => item.department)).size;
+  const averageAmount = items.length > 0 ? totalAmount / items.length : 0;
+
+  const formatCurrency = (amount: number) => {
+    if (amount >= 100000) {
+      return `₹${(amount / 100000).toFixed(2)}L`;
+    }
+    return `₹${amount.toLocaleString('en-IN')}`;
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -189,69 +208,150 @@ const OrderItems = () => {
               </div>
             </Card>
           ) : (
-            <div className="space-y-4">
-              {sortedItems.map((item: any) => (
-                <Card key={item.id} className="p-6 hover:shadow-lg transition-shadow">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-lg font-semibold text-foreground">
-                          {item.description}
-                        </h3>
-                        {item.code && (
-                          <Badge variant="outline" className="text-xs">
-                            {item.code}
+            <>
+              <Card className="overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="w-12 font-semibold">#</TableHead>
+                      <TableHead className="font-semibold">Description</TableHead>
+                      <TableHead className="font-semibold">Department</TableHead>
+                      <TableHead className="font-semibold">Unit</TableHead>
+                      <TableHead className="text-right font-semibold">Quantity</TableHead>
+                      <TableHead className="text-right font-semibold">Unit Rate</TableHead>
+                      <TableHead className="text-right font-semibold">Amount</TableHead>
+                      <TableHead className="text-center font-semibold">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedItems.map((item: any, index: number) => (
+                      <TableRow key={item.id} className="hover:bg-muted/30">
+                        <TableCell className="font-medium text-muted-foreground">
+                          {index + 1}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-1">
+                              {item.code}
+                            </div>
+                            <div className="font-semibold text-foreground">
+                              {item.description}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Milestones: {item.milestones.reduce((sum: number, m: any) => sum + m.percentage, 0)}%
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="font-normal">
+                            {item.department}
                           </Badge>
-                        )}
+                        </TableCell>
+                        <TableCell className="text-foreground font-medium">
+                          {item.unitOfMeasurement}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {item.quantity.toLocaleString('en-IN', { minimumFractionDigits: 3 })}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          ₹{item.unitRate.toLocaleString('en-IN')}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <span className="text-primary font-bold text-base">
+                            {formatCurrency(item.amount)}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-center gap-1">
+                            <Button variant="outline" size="sm" className="h-8 gap-1.5">
+                              <Eye className="w-3.5 h-3.5" />
+                              Measure
+                            </Button>
+                            <Button variant="outline" size="sm" className="h-8 gap-1.5">
+                              <Pencil className="w-3.5 h-3.5" />
+                              Edit
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Card>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+                <Card className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Boxes className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <div className="text-3xl font-bold text-foreground">
+                        {items.length}
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {item.department} • {item.quantity} {item.unitOfMeasurement}
-                      </p>
+                      <div className="text-sm text-muted-foreground">
+                        Total Items
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xl font-bold text-primary">
-                        ₹{item.amount.toLocaleString('en-IN')}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        @ ₹{item.unitRate.toLocaleString('en-IN')}/{item.unitOfMeasurement}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <p className="text-sm font-medium text-foreground mb-2">Billing Breakup:</p>
-                    <div className="space-y-1">
-                      {item.milestones.map((milestone: any) => (
-                        <div key={milestone.id} className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{milestone.name}</span>
-                          <span className="font-medium">{milestone.percentage}%</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 mb-4">
-                    <Button variant="outline" size="sm" className="flex-1 gap-2">
-                      <Pencil className="w-4 h-4" />
-                      Edit
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-
-                  <div className="pt-4 border-t border-border">
-                    <p className="text-xs text-muted-foreground">
-                      Added on {item.createdDate}
-                    </p>
                   </div>
                 </Card>
-              ))}
-            </div>
+
+                <Card className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                      <DollarSign className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <div className="text-3xl font-bold text-green-600">
+                        {formatCurrency(totalAmount)}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Total Amount
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+                      <Package className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <div className="text-3xl font-bold text-foreground">
+                        {uniqueDepartments}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Departments
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center">
+                      <DollarSign className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div>
+                      <div className="text-3xl font-bold text-foreground">
+                        {formatCurrency(averageAmount)}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Average Amount
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </>
           )}
         </div>
       </main>
