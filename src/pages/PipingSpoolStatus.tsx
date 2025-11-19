@@ -9,6 +9,9 @@ import { ArrowLeft, Plus, Search, Columns3, Group, FormInput } from "lucide-reac
 
 interface SpoolRow {
   id: string;
+  area: string;
+  drawingNo: string;
+  revNo: string;
   sheetNo: string;
   spoolNo: string;
   lineSize: string;
@@ -33,6 +36,9 @@ const PipingSpoolStatus = () => {
   const [rows, setRows] = useState<SpoolRow[]>([
     {
       id: "1",
+      area: "A1",
+      drawingNo: "DWG-001",
+      revNo: "R1",
       sheetNo: "1",
       spoolNo: "SP01",
       lineSize: "2",
@@ -45,6 +51,9 @@ const PipingSpoolStatus = () => {
     },
     {
       id: "2",
+      area: "A1",
+      drawingNo: "DWG-001",
+      revNo: "R1",
       sheetNo: "1",
       spoolNo: "SP02",
       lineSize: "1",
@@ -76,6 +85,9 @@ const PipingSpoolStatus = () => {
   const addRow = () => {
     const newRow: SpoolRow = {
       id: String(Date.now()),
+      area: "",
+      drawingNo: "",
+      revNo: "",
       sheetNo: "",
       spoolNo: "",
       lineSize: "",
@@ -212,6 +224,9 @@ const PipingSpoolStatus = () => {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
+                    <th className="p-3 text-left text-sm font-medium text-foreground min-w-[100px]">Area</th>
+                    <th className="p-3 text-left text-sm font-medium text-foreground min-w-[120px]">Drawing No</th>
+                    <th className="p-3 text-left text-sm font-medium text-foreground min-w-[100px]">RevNo</th>
                     <th className="p-3 text-left text-sm font-medium text-foreground min-w-[100px]">SheetNo</th>
                     <th className="p-3 text-left text-sm font-medium text-foreground min-w-[120px]">SpoolNo</th>
                     <th className="p-3 text-left text-sm font-medium text-foreground min-w-[100px]">Line Size</th>
@@ -229,6 +244,15 @@ const PipingSpoolStatus = () => {
                     <th className="p-3 text-left text-sm font-medium text-foreground min-w-[100px]">Actions</th>
                   </tr>
                   <tr className="border-b border-border bg-muted/30">
+                    <th className="p-2">
+                      <Input placeholder="Filter Area..." className="h-8 text-xs" />
+                    </th>
+                    <th className="p-2">
+                      <Input placeholder="Filter Drawing..." className="h-8 text-xs" />
+                    </th>
+                    <th className="p-2">
+                      <Input placeholder="Filter RevNo..." className="h-8 text-xs" />
+                    </th>
                     <th className="p-2">
                       <Input placeholder="Filter SheetNo..." className="h-8 text-xs" />
                     </th>
@@ -267,6 +291,27 @@ const PipingSpoolStatus = () => {
                 <tbody>
                   {filteredRows.map((row) => (
                     <tr key={row.id} className="border-b border-border hover:bg-muted/50">
+                      <td className="p-2">
+                        <Input
+                          value={row.area}
+                          onChange={(e) => updateRow(row.id, 'area', e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                      </td>
+                      <td className="p-2">
+                        <Input
+                          value={row.drawingNo}
+                          onChange={(e) => updateRow(row.id, 'drawingNo', e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                      </td>
+                      <td className="p-2">
+                        <Input
+                          value={row.revNo}
+                          onChange={(e) => updateRow(row.id, 'revNo', e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                      </td>
                       <td className="p-2">
                         <Input
                           value={row.sheetNo}
@@ -356,7 +401,7 @@ const PipingSpoolStatus = () => {
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-border bg-muted/70">
-                    <td colSpan={6} className="p-3 text-right font-semibold text-foreground">
+                    <td colSpan={9} className="p-3 text-right font-semibold text-foreground">
                       Totals:
                     </td>
                     <td className="p-3 font-semibold text-foreground">
