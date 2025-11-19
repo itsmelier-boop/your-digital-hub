@@ -8,6 +8,7 @@ import Projects from "./pages/Projects";
 import ProjectDetails from "./pages/ProjectDetails";
 import OrderItems from "./pages/OrderItems";
 import MeasurementSheet from "./pages/MeasurementSheet";
+import PipingSpoolStatus from "./pages/PipingSpoolStatus";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/projects/:projectId" element={<ProjectDetails />} />
           <Route path="/projects/:projectId/orders/:orderId" element={<OrderItems />} />
           <Route path="/projects/:projectId/orders/:orderId/items/:itemId/measure" element={<MeasurementSheet />} />
+          <Route path="/projects/:projectId/orders/:orderId/items/:itemId/spool-status" element={<PipingSpoolStatus />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

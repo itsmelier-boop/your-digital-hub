@@ -269,9 +269,12 @@ const OrderItems = () => {
                               variant="outline" 
                               size="sm" 
                               className="h-8 gap-1.5"
-                              onClick={() => navigate(`/projects/${projectId}/orders/${orderId}/items/${item.id}/measure`, { 
-                                state: { item } 
-                              })}
+                              onClick={() => {
+                                const route = item.department === "Piping-Spool Status"
+                                  ? `/projects/${projectId}/orders/${orderId}/items/${item.id}/spool-status`
+                                  : `/projects/${projectId}/orders/${orderId}/items/${item.id}/measure`;
+                                navigate(route, { state: { item } });
+                              }}
                             >
                               <Eye className="w-3.5 h-3.5" />
                               Measure
