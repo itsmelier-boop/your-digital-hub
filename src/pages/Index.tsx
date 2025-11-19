@@ -6,8 +6,26 @@ import { QuickActions } from "@/components/QuickActions";
 import { Building2, ShoppingCart, Wallet, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { useProjects } from "@/contexts/ProjectContext";
+import { useState } from "react";
+import { CreateProjectDialog } from "@/components/CreateProjectDialog";
 
 const Index = () => {
+  const { projects, addProject } = useProjects();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleProjectCreated = (newProject: { projectName: string; clientName: string }) => {
+    addProject({
+      name: newProject.projectName,
+      client: newProject.clientName,
+      status: "Active",
+      orders: 0,
+      budget: "₹0",
+      createdDate: new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
+    });
+  };
+
+  const totalOrders = projects.reduce((sum, p) => sum + p.orders, 0);
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
@@ -20,7 +38,10 @@ const Index = () => {
               <h1 className="text-3xl font-bold text-foreground mb-2">Welcome back, User!</h1>
               <p className="text-muted-foreground">Here's what's happening with your projects today.</p>
             </div>
-            <Button className="bg-primary hover:bg-primary/90 gap-2">
+            <Button 
+              className="bg-primary hover:bg-primary/90 gap-2"
+              onClick={() => setIsDialogOpen(true)}
+            >
               <Plus className="w-5 h-5" />
               New Project
             </Button>
@@ -29,7 +50,7 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatCard
               title="Active Projects"
-              value="12"
+              value={projects.filter(p => p.status === "Active").length}
               change="+2 this month"
               changeType="positive"
               icon={Building2}
@@ -37,7 +58,7 @@ const Index = () => {
             />
             <StatCard
               title="Total Orders"
-              value="148"
+              value={totalOrders}
               change="+12 this week"
               changeType="positive"
               icon={ShoppingCart}
@@ -71,6 +92,12 @@ const Index = () => {
           </div>
         </div>
       </main>
+      
+      <CreateProjectDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onProjectCreated={handleProjectCreated}
+      />
     </div>
   );
 };
