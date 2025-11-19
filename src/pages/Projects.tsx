@@ -7,44 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CreateProjectDialog } from "@/components/CreateProjectDialog";
 import { Plus, Eye, Pencil, Trash2, Users, FolderKanban, DollarSign, ShoppingCart } from "lucide-react";
-
-const initialProjects = [
-  {
-    id: 1,
-    name: "Shivam Enterprises Project",
-    client: "Shivam Enterprises",
-    status: "Active",
-    orders: 1,
-    budget: "₹60,25,000",
-    createdDate: "10/18/2025"
-  },
-  {
-    id: 2,
-    name: "FG",
-    client: "DCV",
-    status: "Active",
-    orders: 1,
-    budget: "₹2,93,427",
-    createdDate: "11/9/2025"
-  }
-];
+import { useProjects } from "@/contexts/ProjectContext";
 
 const Projects = () => {
   const navigate = useNavigate();
-  const [projects, setProjects] = useState(initialProjects);
+  const { projects, addProject } = useProjects();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleProjectCreated = (newProject: { projectName: string; clientName: string }) => {
-    const project = {
-      id: projects.length + 1,
+    addProject({
       name: newProject.projectName,
       client: newProject.clientName,
-      status: "Active" as const,
+      status: "Active",
       orders: 0,
       budget: "₹0",
       createdDate: new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
-    };
-    setProjects([...projects, project]);
+    });
   };
 
   const handleViewDetails = (projectId: number) => {
