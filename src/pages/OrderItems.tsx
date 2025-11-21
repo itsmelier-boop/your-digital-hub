@@ -270,9 +270,14 @@ const OrderItems = () => {
                               size="sm" 
                               className="h-8 gap-1.5"
                               onClick={() => {
-                                const route = item.department === "Piping-Spool Status"
-                                  ? `/projects/${projectId}/orders/${orderId}/items/${item.id}/spool-status`
-                                  : `/projects/${projectId}/orders/${orderId}/items/${item.id}/measure`;
+                                let route;
+                                if (item.department === "Piping-Spool Status") {
+                                  route = `/projects/${projectId}/orders/${orderId}/items/${item.id}/spool-status`;
+                                } else if (item.department === "Others" || !["Structure", "Piping-LHS", "Piping-Spool Status", "Piping Insulation", "Equipment Insulation"].includes(item.department)) {
+                                  route = `/projects/${projectId}/orders/${orderId}/items/${item.id}/billing-entry`;
+                                } else {
+                                  route = `/projects/${projectId}/orders/${orderId}/items/${item.id}/measure`;
+                                }
                                 navigate(route, { state: { item } });
                               }}
                             >
