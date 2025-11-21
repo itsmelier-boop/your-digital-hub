@@ -45,6 +45,7 @@ export const CreateItemDialog = ({
   ]);
 
   const unitOfMeasurement = watch("unitOfMeasurement");
+  const department = watch("department");
 
   const addMilestone = () => {
     const newMilestone: Milestone = {
@@ -86,7 +87,7 @@ export const CreateItemDialog = ({
       code: data.itemCode || "",
       description: data.itemDescription,
       unitOfMeasurement: data.unitOfMeasurement,
-      department: data.department,
+      department: data.department === "Others" ? data.customDepartment : data.department,
       quantity: parseFloat(data.quantity),
       unitRate: parseFloat(data.unitRate),
       amount: parseFloat(data.quantity) * parseFloat(data.unitRate),
@@ -183,6 +184,20 @@ export const CreateItemDialog = ({
               </Select>
             </div>
           </div>
+
+          {department === "Others" && (
+            <div>
+              <Label htmlFor="customDepartment">
+                Custom Department <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="customDepartment"
+                placeholder="Enter custom department name"
+                required={department === "Others"}
+                {...register("customDepartment", { required: department === "Others" })}
+              />
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
