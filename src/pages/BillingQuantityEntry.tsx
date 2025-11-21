@@ -272,6 +272,11 @@ const BillingQuantityEntry = () => {
                     <TableHead className="w-[100px] font-semibold text-center">{measureLabels.measure3.toUpperCase()}</TableHead>
                     <TableHead className="w-[80px] font-semibold text-center">QTY</TableHead>
                     <TableHead className="w-[120px] font-semibold text-right">TOTAL</TableHead>
+                    {item?.milestones?.map((milestone: any, index: number) => (
+                      <TableHead key={index} className="w-[120px] font-semibold text-right">
+                        {milestone.name.toUpperCase()} ({milestone.percentage}%)
+                      </TableHead>
+                    ))}
                     <TableHead className="w-[80px] font-semibold text-center">ACTIONS</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -334,6 +339,11 @@ const BillingQuantityEntry = () => {
                       <TableCell className="text-right font-semibold text-primary">
                         {entry.total.toFixed(2)}
                       </TableCell>
+                      {item?.milestones?.map((milestone: any, index: number) => (
+                        <TableCell key={index} className="text-right font-medium text-muted-foreground">
+                          {((entry.total * milestone.percentage) / 100).toFixed(2)}
+                        </TableCell>
+                      ))}
                       <TableCell className="text-center">
                         <Button
                           variant="ghost"
@@ -355,6 +365,11 @@ const BillingQuantityEntry = () => {
                       <TableCell className="text-right text-blue-600">
                         {total.toFixed(2)}
                       </TableCell>
+                      {item?.milestones?.map((milestone: any, index: number) => (
+                        <TableCell key={index} className="text-right text-blue-600">
+                          {((total * milestone.percentage) / 100).toFixed(2)}
+                        </TableCell>
+                      ))}
                       <TableCell />
                     </TableRow>
                   ))}
@@ -366,6 +381,11 @@ const BillingQuantityEntry = () => {
                     <TableCell className="text-right text-primary text-lg">
                       {grandTotal.toFixed(2)}
                     </TableCell>
+                    {item?.milestones?.map((milestone: any, index: number) => (
+                      <TableCell key={index} className="text-right text-primary text-lg">
+                        {((grandTotal * milestone.percentage) / 100).toFixed(2)}
+                      </TableCell>
+                    ))}
                     <TableCell />
                   </TableRow>
                 </TableBody>
