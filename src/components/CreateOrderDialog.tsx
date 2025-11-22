@@ -20,9 +20,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
+import { useProjects } from "@/contexts/ProjectContext";
+import { useOrders } from "@/contexts/OrderContext";
 
 const orderSchema = z.object({
+  projectId: z.string().min(1, "Project is required"),
   orderCode: z.string().max(50, "Order code must be less than 50 characters").optional(),
   orderTitle: z
     .string()
@@ -40,7 +44,8 @@ type OrderFormData = z.infer<typeof orderSchema>;
 interface CreateOrderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onOrderCreated: (order: {
+  defaultProjectId?: number;
+  onOrderCreated?: (order: {
     id: string;
     name: string;
     description: string;
@@ -54,13 +59,17 @@ interface CreateOrderDialogProps {
 export const CreateOrderDialog = ({
   open,
   onOpenChange,
+  defaultProjectId,
   onOrderCreated,
 }: CreateOrderDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { projects } = useProjects();
+  const { addOrder } = useOrders();
 
   const form = useForm<OrderFormData>({
     resolver: zodResolver(orderSchema),
     defaultValues: {
+      projectId: defaultProjectId?.toString() || "",
       orderCode: "",
       orderTitle: "",
       orderDescription: "",
@@ -75,16 +84,27 @@ export const CreateOrderDialog = ({
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       const newOrder = {
-        id: data.orderCode || `ORD-${Date.now()}`,
+        projectId: parseInt(data.projectId),
         name: data.orderTitle,
         description: data.orderDescription || "",
-        status: "Active",
+        status: "Active" as const,
         items: 0,
         amount: "₹0",
-        createdDate: new Date().toLocaleDateString("en-GB"),
       };
 
-      onOrderCreated(newOrder);
+      addOrder(newOrder);
+
+      if (onOrderCreated) {
+        onOrderCreated({
+          id: data.orderCode || `ORD-${Date.now()}`,
+          name: data.orderTitle,
+          description: data.orderDescription || "",
+          status: "Active",
+          items: 0,
+          amount: "₹0",
+          createdDate: new Date().toLocaleDateString("en-GB"),
+        });
+      }
 
       toast({
         title: "Order created",
@@ -121,6 +141,31 @@ export const CreateOrderDialog = ({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="projectId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Project *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={!!defaultProjectId}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a project" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {projects.map((project) => (
+                        <SelectItem key={project.id} value={project.id.toString()}>
+                          {project.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="orderCode"

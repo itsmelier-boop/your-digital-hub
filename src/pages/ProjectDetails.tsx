@@ -7,59 +7,29 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, Eye, Pencil, Trash2, FileText, DollarSign, Package } from "lucide-react";
 import { CreateOrderDialog } from "@/components/CreateOrderDialog";
+import { useProjects } from "@/contexts/ProjectContext";
+import { useOrders } from "@/contexts/OrderContext";
 
-// Mock data - in a real app, this would come from a database/API
-const projectsData = {
-  "1": {
-    id: 1,
-    name: "Shivam Enterprises Project",
-    client: "Shivam Enterprises",
-    orders: [{
-      id: "ORD-001",
-      name: "Main Construction Work",
-      description: "Primary construction activities including structure, piping and cable tray work",
-      status: "Active",
-      items: 2,
-      amount: "₹60,25,000",
-      createdDate: "10/18/2025"
-    }]
-  },
-  "2": {
-    id: 2,
-    name: "FG",
-    client: "DCV",
-    orders: [{
-      id: "ORD-002",
-      name: "Initial Setup Work",
-      description: "Foundation and basic infrastructure setup",
-      status: "Active",
-      items: 1,
-      amount: "₹2,93,427",
-      createdDate: "11/9/2025"
-    }]
-  }
-};
 const ProjectDetails = () => {
-  const {
-    projectId
-  } = useParams<{
-    projectId: string;
-  }>();
+  const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
-  const projectData = projectsData[projectId as keyof typeof projectsData];
-  const [orders, setOrders] = useState(projectData?.orders || []);
-  if (!projectData) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">
+  const { projects } = useProjects();
+  const { getOrdersByProject } = useOrders();
+
+  const project = projects.find(p => p.id === parseInt(projectId || "0"));
+  const orders = getOrdersByProject(parseInt(projectId || "0"));
+
+  if (!project) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground mb-2">Project Not Found</h1>
           <Button onClick={() => navigate("/projects")}>Back to Projects</Button>
         </div>
-      </div>;
+      </div>
+    );
   }
-  const handleOrderCreated = (newOrder: any) => {
-    setOrders(prevOrders => [...prevOrders, newOrder]);
-  };
   const totalOrders = orders.length;
   const totalAmount = orders.reduce((sum, order) => {
     const amount = parseInt(order.amount.replace(/[₹,]/g, ""));
@@ -79,8 +49,8 @@ const ProjectDetails = () => {
 
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">{projectData.name}</h1>
-              <p className="text-muted-foreground">Orders for {projectData.client}</p>
+              <h1 className="text-3xl font-bold text-foreground mb-2">{project.name}</h1>
+              <p className="text-muted-foreground">Orders for {project.client}</p>
             </div>
             <Button className="bg-primary hover:bg-primary/90 gap-2" onClick={() => setIsOrderDialogOpen(true)}>
               <Plus className="w-5 h-5" />
@@ -172,7 +142,11 @@ const ProjectDetails = () => {
         </div>
       </main>
 
-      <CreateOrderDialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen} onOrderCreated={handleOrderCreated} />
+      <CreateOrderDialog 
+        open={isOrderDialogOpen} 
+        onOpenChange={setIsOrderDialogOpen} 
+        defaultProjectId={parseInt(projectId || "0")}
+      />
     </div>;
 };
 export default ProjectDetails;
