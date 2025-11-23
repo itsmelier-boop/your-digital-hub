@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProjectProvider } from "@/contexts/ProjectContext";
 import { OrderProvider } from "@/contexts/OrderContext";
+import { MeasurementProvider } from "@/contexts/MeasurementContext";
 import Index from "./pages/Index";
 import Projects from "./pages/Projects";
 import ProjectDetails from "./pages/ProjectDetails";
@@ -21,9 +22,10 @@ const App = () => (
     <TooltipProvider>
       <ProjectProvider>
         <OrderProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+          <MeasurementProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/projects" element={<Projects />} />
@@ -36,6 +38,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
+          </MeasurementProvider>
         </OrderProvider>
       </ProjectProvider>
     </TooltipProvider>

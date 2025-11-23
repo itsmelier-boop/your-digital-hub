@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
@@ -14,19 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-interface MeasurementRow {
-  id: string;
-  checked: boolean;
-  type: string;
-  markNo: string;
-  unitWeight: number;
-  length: number | null;
-  width: number | null;
-  thickness: number | null;
-  qty: number;
-  weight: number;
-}
+import { useMeasurements, MeasurementRow } from "@/contexts/MeasurementContext";
 
 const MeasurementSheet = () => {
   const { projectId, orderId, itemId } = useParams<{ 
@@ -37,21 +25,33 @@ const MeasurementSheet = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const item = location.state?.item;
+  const { getMeasurementSheet, updateMeasurementSheet } = useMeasurements();
 
-  const [rows, setRows] = useState<MeasurementRow[]>([
-    {
-      id: "1",
-      checked: false,
-      type: "Column",
-      markNo: "C1",
-      unitWeight: 1.05,
-      length: null,
-      width: null,
-      thickness: null,
-      qty: 2,
-      weight: 2.100
+  // Load measurement sheet from context or initialize with default row
+  const existingSheet = getMeasurementSheet(projectId || "", orderId || "", itemId || "");
+  const [rows, setRows] = useState<MeasurementRow[]>(
+    existingSheet?.rows || [
+      {
+        id: "1",
+        checked: false,
+        type: "Column",
+        markNo: "C1",
+        unitWeight: 1.05,
+        length: null,
+        width: null,
+        thickness: null,
+        qty: 2,
+        weight: 2.100
+      }
+    ]
+  );
+
+  // Save to context whenever rows change
+  useEffect(() => {
+    if (projectId && orderId && itemId) {
+      updateMeasurementSheet(projectId, orderId, itemId, rows);
     }
-  ]);
+  }, [rows, projectId, orderId, itemId, updateMeasurementSheet]);
 
   if (!item) {
     return (
