@@ -158,6 +158,8 @@ export const CreateItemDialog = ({
                   <SelectItem value="RMT">RMT</SelectItem>
                   <SelectItem value="CUM">CUM</SelectItem>
                   <SelectItem value="LS">LS</SelectItem>
+                  <SelectItem value="IN-DIA">IN-DIA (Inch Dia)</SelectItem>
+                  <SelectItem value="IN-M">IN-M (Inch Meter)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
