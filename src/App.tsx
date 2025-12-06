@@ -14,6 +14,7 @@ import MeasurementSheet from "./pages/MeasurementSheet";
 import BillingQuantityEntry from "./pages/BillingQuantityEntry";
 import PipingSpoolStatus from "./pages/PipingSpoolStatus";
 import EquipmentInsulation from "./pages/EquipmentInsulation";
+import BillingAbstract from "./pages/BillingAbstract";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/projects/:projectId/orders/:orderId/items/:itemId/billing-entry" element={<BillingQuantityEntry />} />
             <Route path="/projects/:projectId/orders/:orderId/items/:itemId/spool-status" element={<PipingSpoolStatus />} />
             <Route path="/projects/:projectId/orders/:orderId/items/:itemId/equipment-insulation" element={<EquipmentInsulation />} />
+            <Route path="/projects/:projectId/orders/:orderId/abstract" element={<BillingAbstract />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

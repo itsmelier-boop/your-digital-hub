@@ -5,7 +5,7 @@ import { Header } from "@/components/Header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Package, Pencil, Trash2, Eye, DollarSign, Boxes } from "lucide-react";
+import { ArrowLeft, Plus, Package, Pencil, Trash2, Eye, DollarSign, Boxes, FileSpreadsheet } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -120,13 +120,23 @@ const OrderItems = () => {
               <h1 className="text-3xl font-bold text-foreground mb-2">{orderData.name}</h1>
               <p className="text-muted-foreground">Order #{orderId} • {orderData.projectName}</p>
             </div>
-            <Button 
-              className="bg-primary hover:bg-primary/90 gap-2"
-              onClick={() => setIsItemDialogOpen(true)}
-            >
-              <Plus className="w-5 h-5" />
-              Add Item
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                className="gap-2"
+                onClick={() => navigate(`/projects/${projectId}/orders/${orderId}/abstract`)}
+              >
+                <FileSpreadsheet className="w-5 h-5" />
+                Billing Abstract
+              </Button>
+              <Button 
+                className="bg-primary hover:bg-primary/90 gap-2"
+                onClick={() => setIsItemDialogOpen(true)}
+              >
+                <Plus className="w-5 h-5" />
+                Add Item
+              </Button>
+            </div>
           </div>
 
           <Card className="p-6 mb-8">
