@@ -7,11 +7,13 @@ import { Building2, ShoppingCart, Wallet, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useProjects } from "@/contexts/ProjectContext";
-import { useState } from "react";
+import { useMeasurements } from "@/contexts/MeasurementContext";
+import { useState, useMemo } from "react";
 import { CreateProjectDialog } from "@/components/CreateProjectDialog";
 
 const Index = () => {
   const { projects, addProject } = useProjects();
+  const { measurements } = useMeasurements();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleProjectCreated = (newProject: { projectName: string; clientName: string }) => {
@@ -26,6 +28,25 @@ const Index = () => {
   };
 
   const totalOrders = projects.reduce((sum, p) => sum + p.orders, 0);
+  
+  // Calculate total weight from all measurement sheets
+  const totalMeasuredWeight = useMemo(() => {
+    return measurements.reduce((total, sheet) => {
+      const sheetWeight = sheet.rows.reduce((sum, row) => sum + (row.weight || 0), 0);
+      return total + sheetWeight;
+    }, 0);
+  }, [measurements]);
+
+  // Format the total as currency (assuming weight * rate for billing)
+  const formatBillAmount = (weight: number) => {
+    // Convert to lakhs for display
+    if (weight >= 100000) {
+      return `₹${(weight / 100000).toFixed(1)}L`;
+    } else if (weight >= 1000) {
+      return `₹${(weight / 1000).toFixed(1)}K`;
+    }
+    return `₹${weight.toFixed(0)}`;
+  };
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
@@ -65,9 +86,9 @@ const Index = () => {
               iconColor="bg-accent"
             />
             <StatCard
-              title="Pending Payments"
-              value="₹45.2L"
-              change="-₹8.5L cleared"
+              title="Ready for Billing"
+              value={formatBillAmount(totalMeasuredWeight)}
+              change={`${measurements.length} sheets measured`}
               changeType="positive"
               icon={Wallet}
               iconColor="bg-warning"
