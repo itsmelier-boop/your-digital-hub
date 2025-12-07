@@ -14,6 +14,7 @@ import MeasurementSheet from "./pages/MeasurementSheet";
 import BillingQuantityEntry from "./pages/BillingQuantityEntry";
 import PipingSpoolStatus from "./pages/PipingSpoolStatus";
 import EquipmentInsulation from "./pages/EquipmentInsulation";
+import PipingInsulation from "./pages/PipingInsulation";
 import BillingAbstract from "./pages/BillingAbstract";
 import NotFound from "./pages/NotFound";
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/projects/:projectId/orders/:orderId/items/:itemId/billing-entry" element={<BillingQuantityEntry />} />
             <Route path="/projects/:projectId/orders/:orderId/items/:itemId/spool-status" element={<PipingSpoolStatus />} />
             <Route path="/projects/:projectId/orders/:orderId/items/:itemId/equipment-insulation" element={<EquipmentInsulation />} />
+            <Route path="/projects/:projectId/orders/:orderId/items/:itemId/piping-insulation" element={<PipingInsulation />} />
             <Route path="/projects/:projectId/orders/:orderId/abstract" element={<BillingAbstract />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

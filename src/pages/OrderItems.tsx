@@ -285,6 +285,8 @@ const OrderItems = () => {
                                   route = `/projects/${projectId}/orders/${orderId}/items/${item.id}/spool-status`;
                                 } else if (item.department === "Equipment Insulation") {
                                   route = `/projects/${projectId}/orders/${orderId}/items/${item.id}/equipment-insulation`;
+                                } else if (item.department === "Piping Insulation") {
+                                  route = `/projects/${projectId}/orders/${orderId}/items/${item.id}/piping-insulation`;
                                 } else if (item.department === "Others" || !["Structure", "Piping-LHS", "Piping-Spool Status", "Piping Insulation", "Equipment Insulation"].includes(item.department)) {
                                   route = `/projects/${projectId}/orders/${orderId}/items/${item.id}/billing-entry`;
                                 } else {
