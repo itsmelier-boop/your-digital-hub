@@ -528,16 +528,16 @@ export const InsulationDataTable = () => {
 
     return (
       <div className="relative" data-row={rowIndex} data-col={column.id}>
-        <Input
+        <input
           ref={inputRef}
-          value={value}
+          value={value ?? ''}
           onChange={onChange}
           onFocus={onFocus}
           onBlur={onBlur}
           onKeyDown={onKeyDown}
           type="text"
           inputMode={isNumericField ? "decimal" : "text"}
-          className="h-5 text-xs border-0 border-b border-border/30 rounded-none bg-transparent px-2 focus-visible:border-primary/50 focus-visible:ring-0 focus-visible:ring-offset-0 transition-colors"
+          className="w-full h-6 text-xs border border-border/40 rounded px-2 bg-background focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
         />
         {showSuggestions && (
           <div className="absolute z-50 top-full left-0 right-0 bg-popover border border-border rounded-md shadow-lg mt-1 max-h-32 overflow-y-auto">
