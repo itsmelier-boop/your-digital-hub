@@ -1,5 +1,5 @@
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { InsulationDataTable } from "@/components/InsulationDataTable";
+import { InsulationCalculator } from "@/components/InsulationCalculator";
 import { Button } from "@/components/ui/button";
 import { Calculator, ArrowLeft } from "lucide-react";
 
@@ -42,7 +42,7 @@ const PipingInsulation = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-4">
-        <InsulationDataTable />
+        <InsulationCalculator />
       </main>
     </div>
   );
