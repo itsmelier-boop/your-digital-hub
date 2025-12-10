@@ -339,29 +339,25 @@ export const InsulationDataTable = () => {
     }, 0);
   }, [data.length, addRow]);
 
-  const EditableCell = ({ getValue, row, column, table }: any) => {
+  const EditableCell = useCallback(({ getValue, row, column }: any) => {
     const initialValue = getValue();
     const [value, setValue] = useState(initialValue);
-    const [isEditing, setIsEditing] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
-    const expressionKey = `${row.original.id}-${column.id}`;
     const inputRef = useRef<HTMLInputElement>(null);
     const rowIndex = row.index;
 
     useEffect(() => {
-      if (!isEditing) {
-        setValue(initialValue);
-      }
-    }, [initialValue, isEditing]);
+      setValue(initialValue);
+    }, [initialValue]);
 
     const suggestions = useMemo(() => {
-      if (!isEditing || typeof value !== 'string' || value.trim() === '') return [];
+      if (typeof value !== 'string' || value.trim() === '') return [];
       const colSuggestions = columnSuggestions[column.id] || [];
       return colSuggestions
         .filter(s => s.toLowerCase().includes(value.toLowerCase()) && s !== value)
         .slice(0, 5);
-    }, [value, isEditing, column.id]);
+    }, [value, column.id]);
 
     useEffect(() => {
       setShowSuggestions(suggestions.length > 0);
@@ -370,7 +366,6 @@ export const InsulationDataTable = () => {
 
     const evaluateExpression = (expr: string): number | string => {
       if (typeof expr !== 'string') return expr;
-      
       const trimmed = expr.trim();
       if (/^[0-9+\-*/(). ]+$/.test(trimmed)) {
         try {
@@ -383,57 +378,30 @@ export const InsulationDataTable = () => {
       return expr;
     };
 
-    const onFocus = () => {
-      setIsEditing(true);
-      setFocusedCell({ rowIndex, columnId: column.id });
-      const isNumeric = typeof initialValue === "number";
-      if (isNumeric && expressions[expressionKey]) {
-        setValue(expressions[expressionKey]);
-      }
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setValue(e.target.value);
     };
 
-    const commitValue = () => {
-      setIsEditing(false);
+    const handleBlur = () => {
       setShowSuggestions(false);
       const isNumeric = typeof initialValue === "number";
       if (isNumeric) {
         const strValue = String(value);
         const evaluated = evaluateExpression(strValue);
         const finalValue = typeof evaluated === 'number' ? evaluated : parseFloat(strValue) || 0;
-        
-        if (strValue !== String(finalValue) && /[+\-*/()]/.test(strValue)) {
-          setExpressions(prev => ({ ...prev, [expressionKey]: strValue }));
-        } else {
-          setExpressions(prev => {
-            const newExpr = { ...prev };
-            delete newExpr[expressionKey];
-            return newExpr;
-          });
-        }
-        
-        setValue(finalValue);
         updateCell(row.original.id, column.id, finalValue);
       } else {
         updateCell(row.original.id, column.id, value);
       }
     };
 
-    const onBlur = () => {
-      setTimeout(() => {
-        if (!inputRef.current?.contains(document.activeElement)) {
-          commitValue();
-        }
-      }, 100);
-    };
-
     const selectSuggestion = (suggestion: string) => {
       setValue(suggestion);
       setShowSuggestions(false);
       updateCell(row.original.id, column.id, suggestion);
-      inputRef.current?.focus();
     };
 
-    const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (showSuggestions) {
         if (e.key === 'ArrowDown') {
           e.preventDefault();
@@ -455,35 +423,22 @@ export const InsulationDataTable = () => {
           return;
         }
       }
-
       if (e.key === 'Enter') {
         e.preventDefault();
-        commitValue();
-        navigateToCell(rowIndex, column.id, 'down');
-      } else if (e.key === 'Tab') {
-        e.preventDefault();
-        commitValue();
-        navigateToCell(rowIndex, column.id, e.shiftKey ? 'left' : 'next');
-      } else if (e.key === 'ArrowUp' && !showSuggestions) {
-        e.preventDefault();
-        commitValue();
-        navigateToCell(rowIndex, column.id, 'up');
-      } else if (e.key === 'ArrowDown' && !showSuggestions) {
-        e.preventDefault();
-        commitValue();
-        navigateToCell(rowIndex, column.id, 'down');
+        (e.target as HTMLInputElement).blur();
       }
     };
 
-    const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setValue(e.target.value);
+    const handleSelectChange = (val: string) => {
+      setValue(val);
+      updateCell(row.original.id, column.id, val);
     };
 
     if (column.id === "moc") {
       return (
-        <Select value={value} onValueChange={(val) => { setValue(val); updateCell(row.original.id, column.id, val); }}>
-          <SelectTrigger className="h-5 text-xs border-0 border-b border-border/30 rounded-none bg-transparent focus:border-primary/50 transition-colors">
-            <SelectValue />
+        <Select value={value || ''} onValueChange={handleSelectChange}>
+          <SelectTrigger className="h-6 text-xs border border-border/40 rounded bg-background focus:border-primary transition-colors">
+            <SelectValue placeholder="Select" />
           </SelectTrigger>
           <SelectContent className="bg-popover z-50">
             {MOC_OPTIONS.map(moc => (
@@ -496,9 +451,9 @@ export const InsulationDataTable = () => {
 
     if (column.id === "lineSize") {
       return (
-        <Select value={value} onValueChange={(val) => { setValue(val); updateCell(row.original.id, column.id, val); }}>
-          <SelectTrigger className="h-5 text-xs border-0 border-b border-border/30 rounded-none bg-transparent focus:border-primary/50 transition-colors">
-            <SelectValue />
+        <Select value={value || ''} onValueChange={handleSelectChange}>
+          <SelectTrigger className="h-6 text-xs border border-border/40 rounded bg-background focus:border-primary transition-colors">
+            <SelectValue placeholder="Select" />
           </SelectTrigger>
           <SelectContent className="bg-popover z-50">
             {LINE_SIZES.map(size => (
@@ -511,9 +466,9 @@ export const InsulationDataTable = () => {
 
     if (column.id === "insulationType") {
       return (
-        <Select value={value} onValueChange={(val) => { setValue(val); updateCell(row.original.id, column.id, val); }}>
-          <SelectTrigger className="h-5 text-xs border-0 border-b border-border/30 rounded-none bg-transparent focus:border-primary/50 transition-colors">
-            <SelectValue />
+        <Select value={value || ''} onValueChange={handleSelectChange}>
+          <SelectTrigger className="h-6 text-xs border border-border/40 rounded bg-background focus:border-primary transition-colors">
+            <SelectValue placeholder="Select" />
           </SelectTrigger>
           <SelectContent className="bg-popover z-50">
             {INSULATION_TYPES.map(type => (
@@ -531,10 +486,9 @@ export const InsulationDataTable = () => {
         <input
           ref={inputRef}
           value={value ?? ''}
-          onChange={onChange}
-          onFocus={onFocus}
-          onBlur={onBlur}
-          onKeyDown={onKeyDown}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
           type="text"
           inputMode={isNumericField ? "decimal" : "text"}
           className="w-full h-6 text-xs border border-border/40 rounded px-2 bg-background focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
@@ -559,7 +513,7 @@ export const InsulationDataTable = () => {
         )}
       </div>
     );
-  };
+  }, [columnSuggestions, updateCell]);
 
   const columns = useMemo<ColumnDef<PipeEntry>[]>(
     () => [
