@@ -21,7 +21,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Download, Plus, Trash2, Settings2, ArrowUpDown } from "lucide-react";
+import { Download, Plus, Trash2, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
@@ -36,26 +36,175 @@ import {
   calculateResults,
 } from "@/types/piping-insulation";
 
+// Input Cell Component with keyboard navigation
+interface InputCellProps {
+  value: any;
+  rowId: string;
+  rowIndex: number;
+  columnId: string;
+  isNumeric: boolean;
+  onUpdate: (rowId: string, columnId: string, value: any) => void;
+  onNavigate: (rowIndex: number, columnId: string, direction: 'up' | 'down' | 'left' | 'right') => void;
+  onFocus: (rowIndex: number, columnId: string) => void;
+}
+
+const InputCell = React.memo(({ 
+  value, 
+  rowId, 
+  rowIndex, 
+  columnId, 
+  isNumeric, 
+  onUpdate, 
+  onNavigate,
+  onFocus 
+}: InputCellProps) => {
+  const [localValue, setLocalValue] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  const evaluateExpression = (expr: string): number | string => {
+    if (typeof expr !== 'string') return expr;
+    const trimmed = expr.trim();
+    if (/^[0-9+\-*/(). ]+$/.test(trimmed)) {
+      try {
+        const result = Function('"use strict"; return (' + trimmed + ')')();
+        return typeof result === 'number' && !isNaN(result) ? result : expr;
+      } catch {
+        return expr;
+      }
+    }
+    return expr;
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalValue(e.target.value);
+  };
+
+  const handleBlur = () => {
+    if (isNumeric) {
+      const strValue = String(localValue);
+      const evaluated = evaluateExpression(strValue);
+      const finalValue = typeof evaluated === 'number' ? evaluated : parseFloat(strValue) || 0;
+      onUpdate(rowId, columnId, finalValue);
+    } else {
+      onUpdate(rowId, columnId, localValue);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    switch (e.key) {
+      case 'Enter':
+        e.preventDefault();
+        handleBlur();
+        onNavigate(rowIndex, columnId, 'down');
+        break;
+      case 'Tab':
+        e.preventDefault();
+        handleBlur();
+        onNavigate(rowIndex, columnId, e.shiftKey ? 'left' : 'right');
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        handleBlur();
+        onNavigate(rowIndex, columnId, 'up');
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        handleBlur();
+        onNavigate(rowIndex, columnId, 'down');
+        break;
+    }
+  };
+
+  const handleFocus = () => {
+    onFocus(rowIndex, columnId);
+  };
+
+  return (
+    <div data-row={rowIndex} data-col={columnId}>
+      <Input
+        ref={inputRef}
+        value={localValue ?? ''}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        onFocus={handleFocus}
+        type="text"
+        inputMode={isNumeric ? "decimal" : "text"}
+        className="h-8 text-sm border border-border rounded px-2 bg-background focus:border-primary focus:ring-1 focus:ring-primary/30"
+      />
+    </div>
+  );
+});
+
+InputCell.displayName = 'InputCell';
+
+// Select Cell Component with keyboard navigation
+interface SelectCellProps {
+  value: string;
+  rowId: string;
+  rowIndex: number;
+  columnId: string;
+  options: string[];
+  formatOption?: (val: string) => string;
+  onUpdate: (rowId: string, columnId: string, value: any) => void;
+  onNavigate: (rowIndex: number, columnId: string, direction: 'up' | 'down' | 'left' | 'right') => void;
+  onFocus: (rowIndex: number, columnId: string) => void;
+}
+
+const SelectCell = React.memo(({ 
+  value, 
+  rowId, 
+  rowIndex, 
+  columnId, 
+  options, 
+  formatOption,
+  onUpdate,
+  onNavigate,
+  onFocus
+}: SelectCellProps) => {
+  const handleChange = (val: string) => {
+    onUpdate(rowId, columnId, val);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      onNavigate(rowIndex, columnId, e.shiftKey ? 'left' : 'right');
+    }
+  };
+
+  return (
+    <div data-row={rowIndex} data-col={columnId} onKeyDown={handleKeyDown}>
+      <Select value={value || ''} onValueChange={handleChange} onOpenChange={() => onFocus(rowIndex, columnId)}>
+        <SelectTrigger className="h-8 text-sm border border-border rounded bg-background focus:border-primary">
+          <SelectValue placeholder="Select" />
+        </SelectTrigger>
+        <SelectContent className="bg-popover z-50">
+          {options.map(opt => (
+            <SelectItem key={opt} value={opt}>
+              {formatOption ? formatOption(opt) : opt}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+});
+
+SelectCell.displayName = 'SelectCell';
+
 export const InsulationDataTable = () => {
   const [data, setData] = useState<PipeEntry[]>([createEmptyEntry(1)]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnSizing, setColumnSizing] = useState({});
-  const [expressions, setExpressions] = useState<Record<string, string>>({});
   const [focusedCell, setFocusedCell] = useState<{ rowIndex: number; columnId: string } | null>(null);
   const tableRef = useRef<HTMLDivElement>(null);
-
-  const columnSuggestions = useMemo(() => {
-    const suggestions: Record<string, string[]> = {};
-    EDITABLE_COLUMNS.forEach(col => {
-      const values = data
-        .map(row => String(row[col as keyof PipeEntry] || ''))
-        .filter(v => v.trim() !== '' && v !== '0');
-      suggestions[col] = [...new Set(values)];
-    });
-    return suggestions;
-  }, [data]);
 
   const updateCell = useCallback((rowId: string, columnId: string, value: any) => {
     setData((old) =>
@@ -89,6 +238,61 @@ export const InsulationDataTable = () => {
     setData((old) => old.filter((row) => row.id !== rowId).map((row, idx) => ({ ...row, srNo: idx + 1 })));
     toast.success("Row deleted");
   }, [data.length]);
+
+  const handleCellFocus = useCallback((rowIndex: number, columnId: string) => {
+    setFocusedCell({ rowIndex, columnId });
+  }, []);
+
+  const navigateToCell = useCallback((rowIndex: number, columnId: string, direction: 'up' | 'down' | 'left' | 'right') => {
+    const colIndex = EDITABLE_COLUMNS.indexOf(columnId);
+    let newRowIndex = rowIndex;
+    let newColIndex = colIndex;
+
+    switch (direction) {
+      case 'up':
+        newRowIndex = Math.max(0, rowIndex - 1);
+        break;
+      case 'down':
+        if (rowIndex >= data.length - 1) {
+          addRow();
+          newRowIndex = data.length;
+        } else {
+          newRowIndex = rowIndex + 1;
+        }
+        break;
+      case 'left':
+        if (colIndex > 0) {
+          newColIndex = colIndex - 1;
+        } else if (rowIndex > 0) {
+          newRowIndex = rowIndex - 1;
+          newColIndex = EDITABLE_COLUMNS.length - 1;
+        }
+        break;
+      case 'right':
+        if (colIndex < EDITABLE_COLUMNS.length - 1) {
+          newColIndex = colIndex + 1;
+        } else if (rowIndex < data.length - 1) {
+          newRowIndex = rowIndex + 1;
+          newColIndex = 0;
+        } else {
+          addRow();
+          newRowIndex = data.length;
+          newColIndex = 0;
+        }
+        break;
+    }
+
+    const newColumnId = EDITABLE_COLUMNS[newColIndex];
+    setFocusedCell({ rowIndex: newRowIndex, columnId: newColumnId });
+
+    setTimeout(() => {
+      const input = tableRef.current?.querySelector(
+        `[data-row="${newRowIndex}"][data-col="${newColumnId}"] input`
+      ) as HTMLInputElement;
+      input?.focus();
+      input?.select();
+    }, 50);
+  }, [data.length, addRow]);
 
   const handlePaste = useCallback((e: ClipboardEvent) => {
     if (!focusedCell) return;
@@ -168,12 +372,9 @@ export const InsulationDataTable = () => {
     if (!row) return;
 
     const value = row[focusedCell.columnId as keyof PipeEntry];
-    const expressionKey = `${row.id}-${focusedCell.columnId}`;
-    const textToCopy = expressions[expressionKey] || String(value);
-
-    e.clipboardData?.setData('text/plain', textToCopy);
+    e.clipboardData?.setData('text/plain', String(value));
     e.preventDefault();
-  }, [focusedCell, data, expressions]);
+  }, [focusedCell, data]);
 
   useEffect(() => {
     const handlePasteEvent = (e: ClipboardEvent) => handlePaste(e);
@@ -299,286 +500,403 @@ export const InsulationDataTable = () => {
     toast.success("Data exported successfully");
   };
 
-  const navigateToCell = useCallback((rowIndex: number, columnId: string, direction: 'up' | 'down' | 'left' | 'right' | 'next') => {
-    const colIndex = EDITABLE_COLUMNS.indexOf(columnId);
-    let newRowIndex = rowIndex;
-    let newColIndex = colIndex;
-
-    switch (direction) {
-      case 'up':
-        newRowIndex = Math.max(0, rowIndex - 1);
-        break;
-      case 'down':
-        newRowIndex = Math.min(data.length - 1, rowIndex + 1);
-        break;
-      case 'left':
-        newColIndex = Math.max(0, colIndex - 1);
-        break;
-      case 'right':
-      case 'next':
-        newColIndex = colIndex + 1;
-        if (newColIndex >= EDITABLE_COLUMNS.length) {
-          newColIndex = 0;
-          newRowIndex = rowIndex + 1;
-          if (newRowIndex >= data.length) {
-            addRow();
-            newRowIndex = data.length;
-          }
-        }
-        break;
-    }
-
-    const newColumnId = EDITABLE_COLUMNS[newColIndex];
-    setFocusedCell({ rowIndex: newRowIndex, columnId: newColumnId });
-
-    setTimeout(() => {
-      const input = tableRef.current?.querySelector(
-        `[data-row="${newRowIndex}"][data-col="${newColumnId}"] input`
-      ) as HTMLInputElement;
-      input?.focus();
-    }, 0);
-  }, [data.length, addRow]);
-
-  const EditableCell = useCallback(({ getValue, row, column }: any) => {
-    const initialValue = getValue();
-    const [value, setValue] = useState(initialValue);
-    const [showSuggestions, setShowSuggestions] = useState(false);
-    const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
-    const inputRef = useRef<HTMLInputElement>(null);
-    const rowIndex = row.index;
-
-    useEffect(() => {
-      setValue(initialValue);
-    }, [initialValue]);
-
-    const suggestions = useMemo(() => {
-      if (typeof value !== 'string' || value.trim() === '') return [];
-      const colSuggestions = columnSuggestions[column.id] || [];
-      return colSuggestions
-        .filter(s => s.toLowerCase().includes(value.toLowerCase()) && s !== value)
-        .slice(0, 5);
-    }, [value, column.id]);
-
-    useEffect(() => {
-      setShowSuggestions(suggestions.length > 0);
-      setSelectedSuggestionIndex(0);
-    }, [suggestions]);
-
-    const evaluateExpression = (expr: string): number | string => {
-      if (typeof expr !== 'string') return expr;
-      const trimmed = expr.trim();
-      if (/^[0-9+\-*/(). ]+$/.test(trimmed)) {
-        try {
-          const result = Function('"use strict"; return (' + trimmed + ')')();
-          return typeof result === 'number' && !isNaN(result) ? result : expr;
-        } catch {
-          return expr;
-        }
-      }
-      return expr;
-    };
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setValue(e.target.value);
-    };
-
-    const handleBlur = () => {
-      setShowSuggestions(false);
-      const isNumeric = typeof initialValue === "number";
-      if (isNumeric) {
-        const strValue = String(value);
-        const evaluated = evaluateExpression(strValue);
-        const finalValue = typeof evaluated === 'number' ? evaluated : parseFloat(strValue) || 0;
-        updateCell(row.original.id, column.id, finalValue);
-      } else {
-        updateCell(row.original.id, column.id, value);
-      }
-    };
-
-    const selectSuggestion = (suggestion: string) => {
-      setValue(suggestion);
-      setShowSuggestions(false);
-      updateCell(row.original.id, column.id, suggestion);
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (showSuggestions) {
-        if (e.key === 'ArrowDown') {
-          e.preventDefault();
-          setSelectedSuggestionIndex(i => Math.min(i + 1, suggestions.length - 1));
-          return;
-        }
-        if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          setSelectedSuggestionIndex(i => Math.max(i - 1, 0));
-          return;
-        }
-        if (e.key === 'Enter' && suggestions[selectedSuggestionIndex]) {
-          e.preventDefault();
-          selectSuggestion(suggestions[selectedSuggestionIndex]);
-          return;
-        }
-        if (e.key === 'Escape') {
-          setShowSuggestions(false);
-          return;
-        }
-      }
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        (e.target as HTMLInputElement).blur();
-      }
-    };
-
-    const handleSelectChange = (val: string) => {
-      setValue(val);
-      updateCell(row.original.id, column.id, val);
-    };
-
-    if (column.id === "moc") {
-      return (
-        <Select value={value || ''} onValueChange={handleSelectChange}>
-          <SelectTrigger className="h-6 text-xs border border-border/40 rounded bg-background focus:border-primary transition-colors">
-            <SelectValue placeholder="Select" />
-          </SelectTrigger>
-          <SelectContent className="bg-popover z-50">
-            {MOC_OPTIONS.map(moc => (
-              <SelectItem key={moc} value={moc}>{moc}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      );
-    }
-
-    if (column.id === "lineSize") {
-      return (
-        <Select value={value || ''} onValueChange={handleSelectChange}>
-          <SelectTrigger className="h-6 text-xs border border-border/40 rounded bg-background focus:border-primary transition-colors">
-            <SelectValue placeholder="Select" />
-          </SelectTrigger>
-          <SelectContent className="bg-popover z-50">
-            {LINE_SIZES.map(size => (
-              <SelectItem key={size} value={size}>NB{size}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      );
-    }
-
-    if (column.id === "insulationType") {
-      return (
-        <Select value={value || ''} onValueChange={handleSelectChange}>
-          <SelectTrigger className="h-6 text-xs border border-border/40 rounded bg-background focus:border-primary transition-colors">
-            <SelectValue placeholder="Select" />
-          </SelectTrigger>
-          <SelectContent className="bg-popover z-50">
-            {INSULATION_TYPES.map(type => (
-              <SelectItem key={type} value={type}>{type}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      );
-    }
-
-    const isNumericField = typeof initialValue === "number";
-
-    return (
-      <div className="relative" data-row={rowIndex} data-col={column.id}>
-        <input
-          ref={inputRef}
-          value={value ?? ''}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          onKeyDown={handleKeyDown}
-          type="text"
-          inputMode={isNumericField ? "decimal" : "text"}
-          className="w-full h-6 text-xs border border-border/40 rounded px-2 bg-background focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
-        />
-        {showSuggestions && (
-          <div className="absolute z-50 top-full left-0 right-0 bg-popover border border-border rounded-md shadow-lg mt-1 max-h-32 overflow-y-auto">
-            {suggestions.map((suggestion, index) => (
-              <div
-                key={suggestion}
-                className={`px-2 py-1 text-xs cursor-pointer hover:bg-accent ${
-                  index === selectedSuggestionIndex ? 'bg-accent' : ''
-                }`}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  selectSuggestion(suggestion);
-                }}
-              >
-                {suggestion}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }, [columnSuggestions, updateCell]);
-
   const columns = useMemo<ColumnDef<PipeEntry>[]>(
     () => [
       {
         accessorKey: "srNo",
         header: "Sr.",
-        size: 50,
-        cell: ({ getValue }) => <div className="text-center text-xs font-medium">{getValue() as number}</div>,
+        size: 60,
+        cell: ({ getValue }) => <div className="text-center text-sm font-medium py-1">{getValue() as number}</div>,
       },
-      { accessorKey: "location", header: "Location", size: 120, cell: EditableCell },
-      { accessorKey: "drawingNo", header: "Drawing", size: 100, cell: EditableCell },
-      { accessorKey: "sheetNo", header: "Sheet", size: 80, cell: EditableCell },
-      { accessorKey: "moc", header: "MOC", size: 80, cell: EditableCell },
-      { accessorKey: "lineSize", header: "Size", size: 90, cell: EditableCell },
-      { accessorKey: "pipeOD", header: "OD(mm)", size: 80, cell: EditableCell },
-      { accessorKey: "insulationThickness", header: "Thk(mm)", size: 80, cell: EditableCell },
-      { accessorKey: "insulationType", header: "Type", size: 100, cell: EditableCell },
-      { accessorKey: "operatingTemp", header: "Temp°C", size: 80, cell: EditableCell },
-      { accessorKey: "pipeLength", header: "Length(m)", size: 90, cell: EditableCell },
-      { accessorKey: "qtyElbow90", header: "E90°", size: 60, cell: EditableCell },
-      { accessorKey: "qtyElbow45", header: "E45°", size: 60, cell: EditableCell },
-      { accessorKey: "qtyTee", header: "Tee", size: 50, cell: EditableCell },
-      { accessorKey: "qtyReducer", header: "Red", size: 50, cell: EditableCell },
-      { accessorKey: "qtyEndCap", header: "Cap", size: 50, cell: EditableCell },
-      { accessorKey: "qtyFlangeRem", header: "FlgR", size: 55, cell: EditableCell },
-      { accessorKey: "qtyValveRem", header: "VlvR", size: 55, cell: EditableCell },
-      { accessorKey: "qtyFlangeFix", header: "FlgF", size: 55, cell: EditableCell },
-      { accessorKey: "qtyValveFix", header: "VlvF", size: 55, cell: EditableCell },
-      { accessorKey: "qtyWeldValveFix", header: "WVlv", size: 55, cell: EditableCell },
+      { 
+        accessorKey: "location", 
+        header: "Location", 
+        size: 140, 
+        cell: ({ getValue, row }) => (
+          <InputCell
+            value={getValue()}
+            rowId={row.original.id}
+            rowIndex={row.index}
+            columnId="location"
+            isNumeric={false}
+            onUpdate={updateCell}
+            onNavigate={navigateToCell}
+            onFocus={handleCellFocus}
+          />
+        )
+      },
+      { 
+        accessorKey: "drawingNo", 
+        header: "Drawing", 
+        size: 120, 
+        cell: ({ getValue, row }) => (
+          <InputCell
+            value={getValue()}
+            rowId={row.original.id}
+            rowIndex={row.index}
+            columnId="drawingNo"
+            isNumeric={false}
+            onUpdate={updateCell}
+            onNavigate={navigateToCell}
+            onFocus={handleCellFocus}
+          />
+        )
+      },
+      { 
+        accessorKey: "sheetNo", 
+        header: "Sheet", 
+        size: 100, 
+        cell: ({ getValue, row }) => (
+          <InputCell
+            value={getValue()}
+            rowId={row.original.id}
+            rowIndex={row.index}
+            columnId="sheetNo"
+            isNumeric={false}
+            onUpdate={updateCell}
+            onNavigate={navigateToCell}
+            onFocus={handleCellFocus}
+          />
+        )
+      },
+      { 
+        accessorKey: "moc", 
+        header: "MOC", 
+        size: 100, 
+        cell: ({ getValue, row }) => (
+          <SelectCell
+            value={getValue() as string}
+            rowId={row.original.id}
+            rowIndex={row.index}
+            columnId="moc"
+            options={MOC_OPTIONS}
+            onUpdate={updateCell}
+            onNavigate={navigateToCell}
+            onFocus={handleCellFocus}
+          />
+        )
+      },
+      { 
+        accessorKey: "lineSize", 
+        header: "Size (NB)", 
+        size: 110, 
+        cell: ({ getValue, row }) => (
+          <SelectCell
+            value={getValue() as string}
+            rowId={row.original.id}
+            rowIndex={row.index}
+            columnId="lineSize"
+            options={LINE_SIZES}
+            formatOption={(val) => `NB${val}`}
+            onUpdate={updateCell}
+            onNavigate={navigateToCell}
+            onFocus={handleCellFocus}
+          />
+        )
+      },
+      { 
+        accessorKey: "pipeOD", 
+        header: "OD (mm)", 
+        size: 100, 
+        cell: ({ getValue, row }) => (
+          <InputCell
+            value={getValue()}
+            rowId={row.original.id}
+            rowIndex={row.index}
+            columnId="pipeOD"
+            isNumeric={true}
+            onUpdate={updateCell}
+            onNavigate={navigateToCell}
+            onFocus={handleCellFocus}
+          />
+        )
+      },
+      { 
+        accessorKey: "insulationThickness", 
+        header: "Thk (mm)", 
+        size: 100, 
+        cell: ({ getValue, row }) => (
+          <InputCell
+            value={getValue()}
+            rowId={row.original.id}
+            rowIndex={row.index}
+            columnId="insulationThickness"
+            isNumeric={true}
+            onUpdate={updateCell}
+            onNavigate={navigateToCell}
+            onFocus={handleCellFocus}
+          />
+        )
+      },
+      { 
+        accessorKey: "insulationType", 
+        header: "Type", 
+        size: 120, 
+        cell: ({ getValue, row }) => (
+          <SelectCell
+            value={getValue() as string}
+            rowId={row.original.id}
+            rowIndex={row.index}
+            columnId="insulationType"
+            options={INSULATION_TYPES}
+            onUpdate={updateCell}
+            onNavigate={navigateToCell}
+            onFocus={handleCellFocus}
+          />
+        )
+      },
+      { 
+        accessorKey: "operatingTemp", 
+        header: "Temp (°C)", 
+        size: 100, 
+        cell: ({ getValue, row }) => (
+          <InputCell
+            value={getValue()}
+            rowId={row.original.id}
+            rowIndex={row.index}
+            columnId="operatingTemp"
+            isNumeric={true}
+            onUpdate={updateCell}
+            onNavigate={navigateToCell}
+            onFocus={handleCellFocus}
+          />
+        )
+      },
+      { 
+        accessorKey: "pipeLength", 
+        header: "Length (m)", 
+        size: 110, 
+        cell: ({ getValue, row }) => (
+          <InputCell
+            value={getValue()}
+            rowId={row.original.id}
+            rowIndex={row.index}
+            columnId="pipeLength"
+            isNumeric={true}
+            onUpdate={updateCell}
+            onNavigate={navigateToCell}
+            onFocus={handleCellFocus}
+          />
+        )
+      },
+      { 
+        accessorKey: "qtyElbow90", 
+        header: "E90°", 
+        size: 80, 
+        cell: ({ getValue, row }) => (
+          <InputCell
+            value={getValue()}
+            rowId={row.original.id}
+            rowIndex={row.index}
+            columnId="qtyElbow90"
+            isNumeric={true}
+            onUpdate={updateCell}
+            onNavigate={navigateToCell}
+            onFocus={handleCellFocus}
+          />
+        )
+      },
+      { 
+        accessorKey: "qtyElbow45", 
+        header: "E45°", 
+        size: 80, 
+        cell: ({ getValue, row }) => (
+          <InputCell
+            value={getValue()}
+            rowId={row.original.id}
+            rowIndex={row.index}
+            columnId="qtyElbow45"
+            isNumeric={true}
+            onUpdate={updateCell}
+            onNavigate={navigateToCell}
+            onFocus={handleCellFocus}
+          />
+        )
+      },
+      { 
+        accessorKey: "qtyTee", 
+        header: "Tee", 
+        size: 70, 
+        cell: ({ getValue, row }) => (
+          <InputCell
+            value={getValue()}
+            rowId={row.original.id}
+            rowIndex={row.index}
+            columnId="qtyTee"
+            isNumeric={true}
+            onUpdate={updateCell}
+            onNavigate={navigateToCell}
+            onFocus={handleCellFocus}
+          />
+        )
+      },
+      { 
+        accessorKey: "qtyReducer", 
+        header: "Red", 
+        size: 70, 
+        cell: ({ getValue, row }) => (
+          <InputCell
+            value={getValue()}
+            rowId={row.original.id}
+            rowIndex={row.index}
+            columnId="qtyReducer"
+            isNumeric={true}
+            onUpdate={updateCell}
+            onNavigate={navigateToCell}
+            onFocus={handleCellFocus}
+          />
+        )
+      },
+      { 
+        accessorKey: "qtyEndCap", 
+        header: "Cap", 
+        size: 70, 
+        cell: ({ getValue, row }) => (
+          <InputCell
+            value={getValue()}
+            rowId={row.original.id}
+            rowIndex={row.index}
+            columnId="qtyEndCap"
+            isNumeric={true}
+            onUpdate={updateCell}
+            onNavigate={navigateToCell}
+            onFocus={handleCellFocus}
+          />
+        )
+      },
+      { 
+        accessorKey: "qtyFlangeRem", 
+        header: "FlgR", 
+        size: 75, 
+        cell: ({ getValue, row }) => (
+          <InputCell
+            value={getValue()}
+            rowId={row.original.id}
+            rowIndex={row.index}
+            columnId="qtyFlangeRem"
+            isNumeric={true}
+            onUpdate={updateCell}
+            onNavigate={navigateToCell}
+            onFocus={handleCellFocus}
+          />
+        )
+      },
+      { 
+        accessorKey: "qtyValveRem", 
+        header: "VlvR", 
+        size: 75, 
+        cell: ({ getValue, row }) => (
+          <InputCell
+            value={getValue()}
+            rowId={row.original.id}
+            rowIndex={row.index}
+            columnId="qtyValveRem"
+            isNumeric={true}
+            onUpdate={updateCell}
+            onNavigate={navigateToCell}
+            onFocus={handleCellFocus}
+          />
+        )
+      },
+      { 
+        accessorKey: "qtyFlangeFix", 
+        header: "FlgF", 
+        size: 75, 
+        cell: ({ getValue, row }) => (
+          <InputCell
+            value={getValue()}
+            rowId={row.original.id}
+            rowIndex={row.index}
+            columnId="qtyFlangeFix"
+            isNumeric={true}
+            onUpdate={updateCell}
+            onNavigate={navigateToCell}
+            onFocus={handleCellFocus}
+          />
+        )
+      },
+      { 
+        accessorKey: "qtyValveFix", 
+        header: "VlvF", 
+        size: 75, 
+        cell: ({ getValue, row }) => (
+          <InputCell
+            value={getValue()}
+            rowId={row.original.id}
+            rowIndex={row.index}
+            columnId="qtyValveFix"
+            isNumeric={true}
+            onUpdate={updateCell}
+            onNavigate={navigateToCell}
+            onFocus={handleCellFocus}
+          />
+        )
+      },
+      { 
+        accessorKey: "qtyWeldValveFix", 
+        header: "WVlv", 
+        size: 75, 
+        cell: ({ getValue, row }) => (
+          <InputCell
+            value={getValue()}
+            rowId={row.original.id}
+            rowIndex={row.index}
+            columnId="qtyWeldValveFix"
+            isNumeric={true}
+            onUpdate={updateCell}
+            onNavigate={navigateToCell}
+            onFocus={handleCellFocus}
+          />
+        )
+      },
       { 
         accessorKey: "totalFittingsLength", 
-        header: "Fit(m)", 
-        size: 70, 
-        cell: ({ getValue }) => <div className="text-center text-xs font-semibold text-accent">{(getValue() as number).toFixed(2)}</div>,
+        header: "Fittings (m)", 
+        size: 100, 
+        cell: ({ getValue }) => (
+          <div className="text-center text-sm font-semibold text-accent py-1">
+            {(getValue() as number).toFixed(2)}
+          </div>
+        ),
       },
       { 
         accessorKey: "rmt", 
-        header: "RMT", 
-        size: 70, 
-        cell: ({ getValue }) => <div className="text-center text-xs font-semibold text-accent">{(getValue() as number).toFixed(2)}</div>,
+        header: "RMT (m)", 
+        size: 100, 
+        cell: ({ getValue }) => (
+          <div className="text-center text-sm font-semibold text-accent py-1">
+            {(getValue() as number).toFixed(2)}
+          </div>
+        ),
       },
       { 
         accessorKey: "area", 
-        header: "Area", 
-        size: 80, 
-        cell: ({ getValue }) => <div className="text-center text-xs font-bold text-primary">{(getValue() as number).toFixed(3)}</div>,
+        header: "Area (sqm)", 
+        size: 110, 
+        cell: ({ getValue }) => (
+          <div className="text-center text-sm font-bold text-primary py-1">
+            {(getValue() as number).toFixed(3)}
+          </div>
+        ),
       },
       {
         id: "actions",
         header: "",
-        size: 40,
+        size: 50,
         cell: ({ row }) => (
           <Button
             variant="ghost"
             size="sm"
             onClick={() => deleteRow(row.original.id)}
             disabled={data.length === 1}
-            className="h-5 w-5 p-0"
+            className="h-8 w-8 p-0"
           >
-            <Trash2 className="h-3 w-3 text-destructive" />
+            <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
         ),
       },
     ],
-    [data.length, columnSuggestions, expressions, focusedCell]
+    [data.length, updateCell, navigateToCell, handleCellFocus, deleteRow]
   );
 
   const table = useReactTable({
@@ -603,40 +921,43 @@ export const InsulationDataTable = () => {
   }, [data]);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <Card className="p-4 bg-primary text-primary-foreground">
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <div className="text-xs opacity-90">Entries</div>
-            <div className="text-xl font-bold">{data.length}</div>
+            <div className="text-sm opacity-90">Entries</div>
+            <div className="text-2xl font-bold">{data.length}</div>
           </div>
           <div>
-            <div className="text-xs opacity-90">Total RMT (m)</div>
-            <div className="text-xl font-bold">{totals.rmt.toFixed(2)}</div>
+            <div className="text-sm opacity-90">Total RMT (m)</div>
+            <div className="text-2xl font-bold">{totals.rmt.toFixed(2)}</div>
           </div>
           <div>
-            <div className="text-xs opacity-90">Total Area (sqm)</div>
-            <div className="text-xl font-bold">{totals.area.toFixed(3)}</div>
+            <div className="text-sm opacity-90">Total Area (sqm)</div>
+            <div className="text-2xl font-bold">{totals.area.toFixed(3)}</div>
           </div>
         </div>
       </Card>
 
-      <Card className="p-3">
-        <div className="flex flex-wrap gap-2 items-center justify-between">
-          <div className="flex gap-2">
-            <Button onClick={addRow} size="sm" className="gap-2 h-7 text-xs">
-              <Plus className="h-3 w-3" />
+      <Card className="p-4">
+        <div className="flex flex-wrap gap-3 items-center justify-between">
+          <div className="flex gap-3">
+            <Button onClick={addRow} size="default" className="gap-2">
+              <Plus className="h-4 w-4" />
               Add Row
             </Button>
-            <Button onClick={exportToExcel} size="sm" variant="outline" className="gap-2 h-7 text-xs">
-              <Download className="h-3 w-3" />
+            <Button onClick={exportToExcel} size="default" variant="outline" className="gap-2">
+              <Download className="h-4 w-4" />
               Export Excel
             </Button>
           </div>
+          <div className="text-sm text-muted-foreground">
+            Use Arrow keys, Tab, Enter to navigate cells
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2 h-7 text-xs">
-                <Settings2 className="h-3 w-3" />
+              <Button variant="outline" size="default" className="gap-2">
+                <Settings2 className="h-4 w-4" />
                 Columns
               </Button>
             </DropdownMenuTrigger>
@@ -644,7 +965,7 @@ export const InsulationDataTable = () => {
               {table.getAllColumns().filter((column) => column.getCanHide()).map((column) => (
                 <DropdownMenuCheckboxItem
                   key={column.id}
-                  className="capitalize text-xs"
+                  className="capitalize"
                   checked={column.getIsVisible()}
                   onCheckedChange={(value) => column.toggleVisibility(!!value)}
                 >
@@ -657,7 +978,7 @@ export const InsulationDataTable = () => {
       </Card>
 
       <Card className="p-0 overflow-hidden" ref={tableRef}>
-        <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 280px)" }}>
+        <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 320px)" }}>
           <Table style={{ width: table.getTotalSize() }}>
             <TableHeader className="sticky top-0 bg-card z-20">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -666,7 +987,7 @@ export const InsulationDataTable = () => {
                     <TableHead
                       key={header.id}
                       style={{ width: header.getSize() }}
-                      className="border-r border-border last:border-r-0 py-1 text-xs font-semibold bg-muted/50"
+                      className="border-r border-border last:border-r-0 py-2 text-sm font-semibold bg-muted/50"
                     >
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
@@ -678,12 +999,12 @@ export const InsulationDataTable = () => {
               {table.getRowModel().rows.length ? (
                 <>
                   {table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id} className="hover:bg-muted/50">
+                    <TableRow key={row.id} className="hover:bg-muted/30">
                       {row.getVisibleCells().map((cell) => (
                         <TableCell
                           key={cell.id}
                           style={{ width: cell.column.getSize() }}
-                          className="border-r border-border last:border-r-0 py-0.5"
+                          className="border-r border-border last:border-r-0 py-1 px-1"
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </TableCell>
@@ -692,7 +1013,7 @@ export const InsulationDataTable = () => {
                   ))}
                   <TableRow className="bg-muted/70 font-semibold sticky bottom-0">
                     {table.getAllColumns().map((column, index) => (
-                      <TableCell key={column.id} className="border-r border-border last:border-r-0 py-1 text-xs">
+                      <TableCell key={column.id} className="border-r border-border last:border-r-0 py-2 text-sm">
                         {index === 0 ? (
                           <div className="text-center font-bold">TOTAL</div>
                         ) : column.id === "rmt" ? (
