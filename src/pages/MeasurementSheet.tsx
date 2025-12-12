@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
 import { Card } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useMeasurements, MeasurementRow } from "@/contexts/MeasurementContext";
+import { useItems } from "@/contexts/ItemContext";
 
 const MeasurementSheet = () => {
   const { projectId, orderId, itemId } = useParams<{ 
@@ -23,8 +24,8 @@ const MeasurementSheet = () => {
     itemId: string;
   }>();
   const navigate = useNavigate();
-  const location = useLocation();
-  const item = location.state?.item;
+  const { getItem } = useItems();
+  const item = getItem(itemId || "");
   const { getMeasurementSheet, updateMeasurementSheet } = useMeasurements();
 
   // Load measurement sheet from context or initialize with default row

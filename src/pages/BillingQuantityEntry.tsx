@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
 import { Card } from "@/components/ui/card";
@@ -9,6 +9,8 @@ import { ArrowLeft, Plus, FileText, Download, Columns, Trash2 } from "lucide-rea
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useItems } from "@/contexts/ItemContext";
+
 interface WorkEntry {
   id: string;
   itemDescription: string;
@@ -26,8 +28,8 @@ const BillingQuantityEntry = () => {
     itemId
   } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
-  const item = location.state?.item;
+  const { getItem } = useItems();
+  const item = getItem(itemId || "");
   const [measureLabels, setMeasureLabels] = useState({
     measure1: "Length",
     measure2: "Breadth",

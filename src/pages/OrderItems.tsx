@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
@@ -22,6 +21,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useItems, Item } from "@/contexts/ItemContext";
+import { useState } from "react";
 
 // Mock data - in a real app, this would come from a database/API
 const ordersData = {
@@ -30,14 +31,12 @@ const ordersData = {
     name: "Main Construction Work",
     projectId: "1",
     projectName: "Shivam Enterprises",
-    items: []
   },
   "ORD-002": {
     id: "ORD-002",
     name: "Initial Setup Work",
     projectId: "2",
     projectName: "FG",
-    items: []
   }
 };
 
@@ -49,8 +48,9 @@ const OrderItems = () => {
   const [order, setOrder] = useState("ascending");
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
 
+  const { addItem, getItemsByOrder } = useItems();
   const orderData = ordersData[orderId as keyof typeof ordersData];
-  const [items, setItems] = useState(orderData?.items || []);
+  const items = getItemsByOrder(orderId || "");
 
   if (!orderData) {
     return (
@@ -63,8 +63,8 @@ const OrderItems = () => {
     );
   }
 
-  const handleItemCreated = (newItem: any) => {
-    setItems((prevItems) => [...prevItems, newItem]);
+  const handleItemCreated = (newItem: Item) => {
+    addItem(orderId || "", newItem);
   };
 
   const filteredItems = items.filter((item: any) => {
@@ -292,7 +292,7 @@ const OrderItems = () => {
                                 } else {
                                   route = `/projects/${projectId}/orders/${orderId}/items/${item.id}/measure`;
                                 }
-                                navigate(route, { state: { item } });
+                                navigate(route);
                               }}
                             >
                               <Eye className="w-3.5 h-3.5" />

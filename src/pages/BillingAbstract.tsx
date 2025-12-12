@@ -15,65 +15,17 @@ import {
 } from "@/components/ui/table";
 import { useMeasurements } from "@/contexts/MeasurementContext";
 import { useOrders } from "@/contexts/OrderContext";
-
-// Mock items data - in production, this would come from context/API
-const mockItemsData: Record<string, any[]> = {
-  "ORD-001": [
-    {
-      id: "1",
-      code: "STR-001",
-      description: "Structural Steel Work - Main Building",
-      department: "Structure",
-      unitOfMeasurement: "MT",
-      quantity: 150,
-      unitRate: 85000,
-      amount: 12750000,
-      milestones: [
-        { id: "1", name: "Supply", percentage: 60 },
-        { id: "2", name: "Erection", percentage: 40 },
-      ],
-    },
-    {
-      id: "2",
-      code: "PIP-001",
-      description: "Piping Work - Process Lines",
-      department: "Piping-LHS",
-      unitOfMeasurement: "RM",
-      quantity: 500,
-      unitRate: 2500,
-      amount: 1250000,
-      milestones: [
-        { id: "1", name: "Fabrication", percentage: 50 },
-        { id: "2", name: "Installation", percentage: 50 },
-      ],
-    },
-  ],
-  "ORD-002": [
-    {
-      id: "1",
-      code: "FND-001",
-      description: "Foundation Work",
-      department: "Structure",
-      unitOfMeasurement: "CUM",
-      quantity: 25.678,
-      unitRate: 11430,
-      amount: 293427,
-      milestones: [
-        { id: "1", name: "Excavation", percentage: 30 },
-        { id: "2", name: "Concrete", percentage: 70 },
-      ],
-    },
-  ],
-};
+import { useItems } from "@/contexts/ItemContext";
 
 const BillingAbstract = () => {
   const { projectId, orderId } = useParams<{ projectId: string; orderId: string }>();
   const navigate = useNavigate();
-  const { measurements, getMeasurementSheet } = useMeasurements();
+  const { getMeasurementSheet } = useMeasurements();
   const { orders } = useOrders();
+  const { getItemsByOrder } = useItems();
 
   const order = orders.find(o => o.id === orderId);
-  const items = mockItemsData[orderId || ""] || [];
+  const items = getItemsByOrder(orderId || "");
 
   // Calculate measured quantities and amounts for each item
   const abstractData = items.map(item => {
