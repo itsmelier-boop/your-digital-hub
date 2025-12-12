@@ -1,13 +1,14 @@
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { InsulationDataTable } from "@/components/InsulationDataTable";
 import { Button } from "@/components/ui/button";
 import { Calculator, ArrowLeft } from "lucide-react";
+import { useItems } from "@/contexts/ItemContext";
 
 const PipingInsulation = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const { projectId, orderId, itemId } = useParams();
-  const item = location.state?.item;
+  const { getItem } = useItems();
+  const item = getItem(itemId || "");
 
   return (
     <div className="min-h-screen bg-background">

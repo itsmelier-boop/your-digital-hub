@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Plus, Search, Columns3, Group, FormInput } from "lucide-react";
+import { useItems } from "@/contexts/ItemContext";
 
 interface SpoolRow {
   id: string;
@@ -30,8 +31,8 @@ const PipingSpoolStatus = () => {
     itemId: string;
   }>();
   const navigate = useNavigate();
-  const location = useLocation();
-  const item = location.state?.item;
+  const { getItem } = useItems();
+  const item = getItem(itemId || "");
 
   const [rows, setRows] = useState<SpoolRow[]>([
     {
@@ -162,7 +163,7 @@ const PipingSpoolStatus = () => {
               </div>
               <div>
                 <span className="text-muted-foreground">Item Code:</span>
-                <span className="ml-2 font-medium text-foreground">{item.itemCode}</span>
+                <span className="ml-2 font-medium text-foreground">{item.code}</span>
               </div>
               <div>
                 <span className="text-muted-foreground">Department:</span>

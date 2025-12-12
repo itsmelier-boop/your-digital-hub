@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EquipmentDataTable } from "@/components/EquipmentDataTable";
@@ -18,12 +18,13 @@ import { Plus, Download, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
+import { useItems } from "@/contexts/ItemContext";
 
 const EquipmentInsulation = () => {
   const { projectId, orderId, itemId } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
-  const item = location.state?.item;
+  const { getItem } = useItems();
+  const item = getItem(itemId || "");
 
   const [rows, setRows] = useState<EquipmentRow[]>([
     {
@@ -197,7 +198,7 @@ const EquipmentInsulation = () => {
               <div className="bg-muted/50 p-4 rounded-lg mb-4">
                 <h2 className="text-lg font-semibold">{item.description}</h2>
                 <p className="text-sm text-muted-foreground">
-                  Item Code: {item.itemCode} | Quantity: {item.quantity} {item.unit}
+                  Item Code: {item.code} | Quantity: {item.quantity} {item.unitOfMeasurement}
                 </p>
               </div>
             )}
