@@ -5,8 +5,15 @@ import { Header } from "@/components/Header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Plus, Search, Columns3, Group, FormInput } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Plus, Search, Columns3, Group, FormInput, Download, Wrench } from "lucide-react";
 import { useItems } from "@/contexts/ItemContext";
+import { WeldJoint } from "@/types/weld";
+import { WeldTable } from "@/components/weld/WeldTable";
+import { WeldDashboard } from "@/components/weld/WeldDashboard";
+import { CategoryView } from "@/components/weld/CategoryView";
+import { exportToCSV } from "@/utils/weldClassification";
+import { toast } from "sonner";
 
 interface SpoolRow {
   id: string;
@@ -69,6 +76,7 @@ const PipingSpoolStatus = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [paintSystemValue, setPaintSystemValue] = useState("3.2");
+  const [joints, setJoints] = useState<WeldJoint[]>([]);
 
   if (!item) {
     return (
@@ -114,6 +122,27 @@ const PipingSpoolStatus = () => {
 
   const applyPaintSystemToAll = () => {
     setRows(rows.map(row => ({ ...row, paintSystem: paintSystemValue })));
+  };
+
+  // Weld joint handlers
+  const handleAddJoint = (joint: WeldJoint) => {
+    setJoints([...joints, joint]);
+  };
+
+  const handleDeleteJoint = (id: string) => {
+    setJoints(joints.filter((joint) => joint.id !== id));
+    toast.success("Joint deleted");
+  };
+
+  const handleExport = () => {
+    const csv = exportToCSV(joints);
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `weld-joints-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    toast.success("Data exported successfully");
   };
 
   // Calculate milestone values based on total surface area
@@ -176,251 +205,315 @@ const PipingSpoolStatus = () => {
             </div>
           </Card>
 
-          <Card className="p-6">
-            <div className="flex items-center gap-4 mb-6 flex-wrap">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search all columns..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Paint System:</span>
-                <Input
-                  value={paintSystemValue}
-                  onChange={(e) => setPaintSystemValue(e.target.value)}
-                  className="w-20"
-                />
-                <Button variant="outline" size="sm" onClick={applyPaintSystemToAll}>
-                  Apply to All
-                </Button>
-              </div>
+          {/* Main Tabs */}
+          <Tabs defaultValue="spool" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2 max-w-md">
+              <TabsTrigger value="spool">Spool Data</TabsTrigger>
+              <TabsTrigger value="weld" className="flex items-center gap-2">
+                <Wrench className="h-4 w-4" />
+                Weld Joints
+              </TabsTrigger>
+            </TabsList>
 
-              <Button variant="outline" size="sm">
-                <Columns3 className="h-4 w-4 mr-2" />
-                Columns
-              </Button>
+            {/* Spool Data Tab */}
+            <TabsContent value="spool">
+              <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6 flex-wrap">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search all columns..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Paint System:</span>
+                    <Input
+                      value={paintSystemValue}
+                      onChange={(e) => setPaintSystemValue(e.target.value)}
+                      className="w-20"
+                    />
+                    <Button variant="outline" size="sm" onClick={applyPaintSystemToAll}>
+                      Apply to All
+                    </Button>
+                  </div>
 
-              <Button variant="outline" size="sm">
-                <Group className="h-4 w-4 mr-2" />
-                Group By
-              </Button>
+                  <Button variant="outline" size="sm">
+                    <Columns3 className="h-4 w-4 mr-2" />
+                    Columns
+                  </Button>
 
-              <Button onClick={addRow} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Row
-              </Button>
+                  <Button variant="outline" size="sm">
+                    <Group className="h-4 w-4 mr-2" />
+                    Group By
+                  </Button>
 
-              <Button variant="outline" size="sm">
-                <FormInput className="h-4 w-4 mr-2" />
-                Add via Form
-              </Button>
-            </div>
+                  <Button onClick={addRow} size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Row
+                  </Button>
 
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b border-border bg-muted/50">
-                    <th className="p-3 text-left text-sm font-medium text-foreground min-w-[100px]">Area</th>
-                    <th className="p-3 text-left text-sm font-medium text-foreground min-w-[120px]">Drawing No</th>
-                    <th className="p-3 text-left text-sm font-medium text-foreground min-w-[100px]">RevNo</th>
-                    <th className="p-3 text-left text-sm font-medium text-foreground min-w-[100px]">SheetNo</th>
-                    <th className="p-3 text-left text-sm font-medium text-foreground min-w-[120px]">SpoolNo</th>
-                    <th className="p-3 text-left text-sm font-medium text-foreground min-w-[100px]">Line Size</th>
-                    <th className="p-3 text-left text-sm font-medium text-foreground min-w-[140px]">BaseMaterial</th>
-                    <th className="p-3 text-left text-sm font-medium text-foreground min-w-[100px]">length</th>
-                    <th className="p-3 text-left text-sm font-medium text-foreground min-w-[120px]">InchMeter</th>
-                    <th className="p-3 text-left text-sm font-medium text-foreground min-w-[130px]">SurfaceArea</th>
-                    <th className="p-3 text-left text-sm font-medium text-foreground min-w-[120px]">PaintSystem</th>
-                    <th className="p-3 text-left text-sm font-medium text-foreground min-w-[150px]">Remarks</th>
-                    {milestoneValues.map((milestone: any) => (
-                      <th key={milestone.name} className="p-3 text-left text-sm font-medium text-foreground min-w-[120px]">
-                        {milestone.name}
-                      </th>
-                    ))}
-                    <th className="p-3 text-left text-sm font-medium text-foreground min-w-[100px]">Actions</th>
-                  </tr>
-                  <tr className="border-b border-border bg-muted/30">
-                    <th className="p-2">
-                      <Input placeholder="Filter Area..." className="h-8 text-xs" />
-                    </th>
-                    <th className="p-2">
-                      <Input placeholder="Filter Drawing..." className="h-8 text-xs" />
-                    </th>
-                    <th className="p-2">
-                      <Input placeholder="Filter RevNo..." className="h-8 text-xs" />
-                    </th>
-                    <th className="p-2">
-                      <Input placeholder="Filter SheetNo..." className="h-8 text-xs" />
-                    </th>
-                    <th className="p-2">
-                      <Input placeholder="Filter SpoolNo..." className="h-8 text-xs" />
-                    </th>
-                    <th className="p-2">
-                      <Input placeholder="Filter Line Size..." className="h-8 text-xs" />
-                    </th>
-                    <th className="p-2">
-                      <Input placeholder="Filter BaseMater..." className="h-8 text-xs" />
-                    </th>
-                    <th className="p-2">
-                      <Input placeholder="Filter length..." className="h-8 text-xs" />
-                    </th>
-                    <th className="p-2">
-                      <Input placeholder="Filter InchMete..." className="h-8 text-xs" />
-                    </th>
-                    <th className="p-2">
-                      <Input placeholder="Filter SurfaceAr..." className="h-8 text-xs" />
-                    </th>
-                    <th className="p-2">
-                      <Input placeholder="Filter PaintSyst..." className="h-8 text-xs" />
-                    </th>
-                    <th className="p-2">
-                      <Input placeholder="Filter Remarks..." className="h-8 text-xs" />
-                    </th>
-                    {milestoneValues.map((milestone: any) => (
-                      <th key={`filter-${milestone.name}`} className="p-2">
-                        <Input placeholder={`Filter ${milestone.name}...`} className="h-8 text-xs" />
-                      </th>
-                    ))}
-                    <th className="p-2"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRows.map((row) => (
-                    <tr key={row.id} className="border-b border-border hover:bg-muted/50">
-                      <td className="p-2">
-                        <Input
-                          value={row.area}
-                          onChange={(e) => updateRow(row.id, 'area', e.target.value)}
-                          className="h-8 text-sm"
-                        />
-                      </td>
-                      <td className="p-2">
-                        <Input
-                          value={row.drawingNo}
-                          onChange={(e) => updateRow(row.id, 'drawingNo', e.target.value)}
-                          className="h-8 text-sm"
-                        />
-                      </td>
-                      <td className="p-2">
-                        <Input
-                          value={row.revNo}
-                          onChange={(e) => updateRow(row.id, 'revNo', e.target.value)}
-                          className="h-8 text-sm"
-                        />
-                      </td>
-                      <td className="p-2">
-                        <Input
-                          value={row.sheetNo}
-                          onChange={(e) => updateRow(row.id, 'sheetNo', e.target.value)}
-                          className="h-8 text-sm"
-                        />
-                      </td>
-                      <td className="p-2">
-                        <Input
-                          value={row.spoolNo}
-                          onChange={(e) => updateRow(row.id, 'spoolNo', e.target.value)}
-                          className="h-8 text-sm"
-                        />
-                      </td>
-                      <td className="p-2">
-                        <Input
-                          value={row.lineSize}
-                          onChange={(e) => updateRow(row.id, 'lineSize', e.target.value)}
-                          className="h-8 text-sm"
-                        />
-                      </td>
-                      <td className="p-2">
-                        <Input
-                          value={row.baseMaterial}
-                          onChange={(e) => updateRow(row.id, 'baseMaterial', e.target.value)}
-                          className="h-8 text-sm"
-                        />
-                      </td>
-                      <td className="p-2">
-                        <Input
-                          type="number"
-                          value={row.length}
-                          onChange={(e) => updateRow(row.id, 'length', parseFloat(e.target.value) || 0)}
-                          className="h-8 text-sm"
-                          step="0.001"
-                        />
-                      </td>
-                      <td className="p-2">
-                        <Input
-                          type="number"
-                          value={row.inchMeter}
-                          onChange={(e) => updateRow(row.id, 'inchMeter', parseFloat(e.target.value) || 0)}
-                          className="h-8 text-sm"
-                          step="0.001"
-                        />
-                      </td>
-                      <td className="p-2">
-                        <Input
-                          type="number"
-                          value={row.surfaceArea}
-                          onChange={(e) => updateRow(row.id, 'surfaceArea', parseFloat(e.target.value) || 0)}
-                          className="h-8 text-sm"
-                          step="0.001"
-                        />
-                      </td>
-                      <td className="p-2">
-                        <Input
-                          value={row.paintSystem}
-                          onChange={(e) => updateRow(row.id, 'paintSystem', e.target.value)}
-                          className="h-8 text-sm"
-                        />
-                      </td>
-                      <td className="p-2">
-                        <Input
-                          value={row.remarks}
-                          onChange={(e) => updateRow(row.id, 'remarks', e.target.value)}
-                          className="h-8 text-sm"
-                        />
-                      </td>
-                      {milestoneValues.map((milestone: any) => (
-                        <td key={`${row.id}-${milestone.name}`} className="p-2 text-sm text-foreground">
-                          {((row.surfaceArea * milestone.percentage) / 100).toFixed(3)}
-                        </td>
+                  <Button variant="outline" size="sm">
+                    <FormInput className="h-4 w-4 mr-2" />
+                    Add via Form
+                  </Button>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/50">
+                        <th className="p-3 text-left text-sm font-medium text-foreground min-w-[100px]">Area</th>
+                        <th className="p-3 text-left text-sm font-medium text-foreground min-w-[120px]">Drawing No</th>
+                        <th className="p-3 text-left text-sm font-medium text-foreground min-w-[100px]">RevNo</th>
+                        <th className="p-3 text-left text-sm font-medium text-foreground min-w-[100px]">SheetNo</th>
+                        <th className="p-3 text-left text-sm font-medium text-foreground min-w-[120px]">SpoolNo</th>
+                        <th className="p-3 text-left text-sm font-medium text-foreground min-w-[100px]">Line Size</th>
+                        <th className="p-3 text-left text-sm font-medium text-foreground min-w-[140px]">BaseMaterial</th>
+                        <th className="p-3 text-left text-sm font-medium text-foreground min-w-[100px]">length</th>
+                        <th className="p-3 text-left text-sm font-medium text-foreground min-w-[120px]">InchMeter</th>
+                        <th className="p-3 text-left text-sm font-medium text-foreground min-w-[130px]">SurfaceArea</th>
+                        <th className="p-3 text-left text-sm font-medium text-foreground min-w-[120px]">PaintSystem</th>
+                        <th className="p-3 text-left text-sm font-medium text-foreground min-w-[150px]">Remarks</th>
+                        {milestoneValues.map((milestone: any) => (
+                          <th key={milestone.name} className="p-3 text-left text-sm font-medium text-foreground min-w-[120px]">
+                            {milestone.name}
+                          </th>
+                        ))}
+                        <th className="p-3 text-left text-sm font-medium text-foreground min-w-[100px]">Actions</th>
+                      </tr>
+                      <tr className="border-b border-border bg-muted/30">
+                        <th className="p-2">
+                          <Input placeholder="Filter Area..." className="h-8 text-xs" />
+                        </th>
+                        <th className="p-2">
+                          <Input placeholder="Filter Drawing..." className="h-8 text-xs" />
+                        </th>
+                        <th className="p-2">
+                          <Input placeholder="Filter RevNo..." className="h-8 text-xs" />
+                        </th>
+                        <th className="p-2">
+                          <Input placeholder="Filter SheetNo..." className="h-8 text-xs" />
+                        </th>
+                        <th className="p-2">
+                          <Input placeholder="Filter SpoolNo..." className="h-8 text-xs" />
+                        </th>
+                        <th className="p-2">
+                          <Input placeholder="Filter Line Size..." className="h-8 text-xs" />
+                        </th>
+                        <th className="p-2">
+                          <Input placeholder="Filter BaseMater..." className="h-8 text-xs" />
+                        </th>
+                        <th className="p-2">
+                          <Input placeholder="Filter length..." className="h-8 text-xs" />
+                        </th>
+                        <th className="p-2">
+                          <Input placeholder="Filter InchMete..." className="h-8 text-xs" />
+                        </th>
+                        <th className="p-2">
+                          <Input placeholder="Filter SurfaceAr..." className="h-8 text-xs" />
+                        </th>
+                        <th className="p-2">
+                          <Input placeholder="Filter PaintSyst..." className="h-8 text-xs" />
+                        </th>
+                        <th className="p-2">
+                          <Input placeholder="Filter Remarks..." className="h-8 text-xs" />
+                        </th>
+                        {milestoneValues.map((milestone: any) => (
+                          <th key={`filter-${milestone.name}`} className="p-2">
+                            <Input placeholder={`Filter ${milestone.name}...`} className="h-8 text-xs" />
+                          </th>
+                        ))}
+                        <th className="p-2"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredRows.map((row) => (
+                        <tr key={row.id} className="border-b border-border hover:bg-muted/50">
+                          <td className="p-2">
+                            <Input
+                              value={row.area}
+                              onChange={(e) => updateRow(row.id, 'area', e.target.value)}
+                              className="h-8 text-sm"
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              value={row.drawingNo}
+                              onChange={(e) => updateRow(row.id, 'drawingNo', e.target.value)}
+                              className="h-8 text-sm"
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              value={row.revNo}
+                              onChange={(e) => updateRow(row.id, 'revNo', e.target.value)}
+                              className="h-8 text-sm"
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              value={row.sheetNo}
+                              onChange={(e) => updateRow(row.id, 'sheetNo', e.target.value)}
+                              className="h-8 text-sm"
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              value={row.spoolNo}
+                              onChange={(e) => updateRow(row.id, 'spoolNo', e.target.value)}
+                              className="h-8 text-sm"
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              value={row.lineSize}
+                              onChange={(e) => updateRow(row.id, 'lineSize', e.target.value)}
+                              className="h-8 text-sm"
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              value={row.baseMaterial}
+                              onChange={(e) => updateRow(row.id, 'baseMaterial', e.target.value)}
+                              className="h-8 text-sm"
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              type="number"
+                              value={row.length}
+                              onChange={(e) => updateRow(row.id, 'length', parseFloat(e.target.value) || 0)}
+                              className="h-8 text-sm"
+                              step="0.001"
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              type="number"
+                              value={row.inchMeter}
+                              onChange={(e) => updateRow(row.id, 'inchMeter', parseFloat(e.target.value) || 0)}
+                              className="h-8 text-sm"
+                              step="0.001"
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              type="number"
+                              value={row.surfaceArea}
+                              onChange={(e) => updateRow(row.id, 'surfaceArea', parseFloat(e.target.value) || 0)}
+                              className="h-8 text-sm"
+                              step="0.001"
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              value={row.paintSystem}
+                              onChange={(e) => updateRow(row.id, 'paintSystem', e.target.value)}
+                              className="h-8 text-sm"
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              value={row.remarks}
+                              onChange={(e) => updateRow(row.id, 'remarks', e.target.value)}
+                              className="h-8 text-sm"
+                            />
+                          </td>
+                          {milestoneValues.map((milestone: any) => (
+                            <td key={`${row.id}-${milestone.name}`} className="p-2 text-sm text-foreground">
+                              {((row.surfaceArea * milestone.percentage) / 100).toFixed(3)}
+                            </td>
+                          ))}
+                          <td className="p-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setRows(rows.filter(r => r.id !== row.id))}
+                              className="h-8"
+                            >
+                              Delete
+                            </Button>
+                          </td>
+                        </tr>
                       ))}
-                      <td className="p-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setRows(rows.filter(r => r.id !== row.id))}
-                          className="h-8"
-                        >
-                          Delete
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-border bg-muted/70">
-                    <td colSpan={9} className="p-3 text-right font-semibold text-foreground">
-                      Totals:
-                    </td>
-                    <td className="p-3 font-semibold text-foreground">
-                      {totalSurfaceArea.toFixed(3)}
-                    </td>
-                    <td className="p-3"></td>
-                    <td className="p-3"></td>
-                    {milestoneValues.map((milestone: any) => (
-                      <td key={`total-${milestone.name}`} className="p-3 font-semibold text-foreground">
-                        {milestone.value.toFixed(3)}
-                      </td>
-                    ))}
-                    <td className="p-3"></td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </Card>
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t-2 border-border bg-muted/70">
+                        <td colSpan={9} className="p-3 text-right font-semibold text-foreground">
+                          Totals:
+                        </td>
+                        <td className="p-3 font-semibold text-foreground">
+                          {totalSurfaceArea.toFixed(3)}
+                        </td>
+                        <td className="p-3"></td>
+                        <td className="p-3"></td>
+                        {milestoneValues.map((milestone: any) => (
+                          <td key={`total-${milestone.name}`} className="p-3 font-semibold text-foreground">
+                            {milestone.value.toFixed(3)}
+                          </td>
+                        ))}
+                        <td className="p-3"></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </Card>
+            </TabsContent>
+
+            {/* Weld Joints Tab */}
+            <TabsContent value="weld">
+              <div className="space-y-6">
+                {/* Weld Header with Export */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
+                      <Wrench className="h-6 w-6 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-foreground">Weld Joint Measurement System</h2>
+                      <p className="text-sm text-muted-foreground">Professional welding activity tracking & classification</p>
+                    </div>
+                  </div>
+                  {joints.length > 0 && (
+                    <Button onClick={handleExport} variant="outline">
+                      <Download className="mr-2 h-4 w-4" />
+                      Export CSV
+                    </Button>
+                  )}
+                </div>
+
+                {/* Weld Sub-Tabs */}
+                <Tabs defaultValue="table" className="space-y-6">
+                  <TabsList className="grid w-full grid-cols-3 max-w-xl">
+                    <TabsTrigger value="table">Data Table</TabsTrigger>
+                    <TabsTrigger value="categories">Categories</TabsTrigger>
+                    <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="table">
+                    <WeldTable 
+                      joints={joints} 
+                      onAdd={handleAddJoint} 
+                      onDelete={handleDeleteJoint} 
+                      nextSlNo={joints.length + 1} 
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="categories">
+                    <CategoryView joints={joints} />
+                  </TabsContent>
+
+                  <TabsContent value="dashboard">
+                    <WeldDashboard joints={joints} />
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
     </div>
