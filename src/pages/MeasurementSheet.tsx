@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Plus, Calculator, X } from "lucide-react";
+import { ArrowLeft, Plus, X, Calculator } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -311,14 +311,20 @@ const MeasurementSheet = () => {
                         {row.weight.toFixed(3)}
                       </td>
                       {milestoneWeights.map((milestone: any) => (
-                        <td key={milestone.id} className="border border-border p-2 text-center">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-6 w-6 p-0 hover:bg-yellow-500/20"
-                          >
-                            <Calculator className="w-3 h-3 text-yellow-600" />
-                          </Button>
+                        <td key={milestone.id} className="border border-border p-1">
+                          <Input
+                            type="number"
+                            step="0.001"
+                            value={row.milestoneEntries?.[milestone.id] ?? ''}
+                            onChange={(e) => {
+                              const value = e.target.value ? parseFloat(e.target.value) : undefined;
+                              const newEntries = { ...row.milestoneEntries, [milestone.id]: value };
+                              if (value === undefined) delete newEntries[milestone.id];
+                              updateRow(row.id, 'milestoneEntries', newEntries);
+                            }}
+                            className="h-8 text-sm border-0 focus-visible:ring-0 text-center w-full"
+                            placeholder="-"
+                          />
                         </td>
                       ))}
                       <td className="border border-border p-2 text-center">
@@ -343,12 +349,17 @@ const MeasurementSheet = () => {
                     <td className="border border-border p-2 text-right text-sm text-foreground">
                       {totalWeight.toFixed(3)}
                     </td>
-                    {milestoneWeights.map((milestone: any) => (
-                      <td key={milestone.id} className="border border-border p-2 text-center text-sm font-bold" 
-                          style={{ color: milestone.name.toLowerCase().includes('supply') ? '#16a34a' : '#9333ea' }}>
-                        {milestone.weight.toFixed(3)}
-                      </td>
-                    ))}
+                    {milestoneWeights.map((milestone: any) => {
+                      const milestoneTotal = rows.reduce((sum, row) => 
+                        sum + (row.milestoneEntries?.[milestone.id] || 0), 0
+                      );
+                      return (
+                        <td key={milestone.id} className="border border-border p-2 text-center text-sm font-bold" 
+                            style={{ color: milestone.name.toLowerCase().includes('supply') ? '#16a34a' : '#9333ea' }}>
+                          {milestoneTotal > 0 ? milestoneTotal.toFixed(3) : '-'}
+                        </td>
+                      );
+                    })}
                     <td className="border border-border p-2"></td>
                   </tr>
                 </tbody>
