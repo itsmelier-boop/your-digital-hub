@@ -5,7 +5,7 @@ import { Header } from "@/components/Header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { ArrowLeft, Plus, X, Calculator } from "lucide-react";
 import {
   Select,
@@ -204,7 +204,7 @@ const MeasurementSheet = () => {
                 <thead>
                   <tr className="bg-muted/50">
                     <th className="border border-border p-2 text-sm font-semibold text-foreground w-12">#</th>
-                    <th className="border border-border p-2 text-sm font-semibold text-foreground w-16">Check</th>
+                    
                     <th className="border border-border p-2 text-sm font-semibold text-foreground w-32">Type</th>
                     <th className="border border-border p-2 text-sm font-semibold text-foreground w-24">Mark No.</th>
                     <th className="border border-border p-2 text-sm font-semibold text-foreground w-28">Unit Weight</th>
@@ -227,14 +227,6 @@ const MeasurementSheet = () => {
                     <tr key={row.id} className="hover:bg-muted/20">
                       <td className="border border-border p-2 text-center text-sm text-muted-foreground">
                         {index + 1}
-                      </td>
-                      <td className="border border-border p-2 text-center">
-                        <Checkbox
-                          checked={row.checked}
-                          onCheckedChange={(checked) => 
-                            updateRow(row.id, 'checked', checked)
-                          }
-                        />
                       </td>
                       <td className="border border-border p-2">
                         <Select
@@ -339,7 +331,7 @@ const MeasurementSheet = () => {
                     </tr>
                   ))}
                   <tr className="bg-muted/50 font-semibold">
-                    <td colSpan={9} className="border border-border p-2 text-sm text-foreground">
+                    <td colSpan={8} className="border border-border p-2 text-sm text-foreground">
                       <div className="flex items-center gap-2">
                         <Calculator className="w-4 h-4" />
                         Totals
