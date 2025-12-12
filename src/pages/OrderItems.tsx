@@ -22,23 +22,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useItems, Item } from "@/contexts/ItemContext";
+import { useOrders } from "@/contexts/OrderContext";
+import { useProjects } from "@/contexts/ProjectContext";
 import { useState } from "react";
-
-// Mock data - in a real app, this would come from a database/API
-const ordersData = {
-  "ORD-001": {
-    id: "ORD-001",
-    name: "Main Construction Work",
-    projectId: "1",
-    projectName: "Shivam Enterprises",
-  },
-  "ORD-002": {
-    id: "ORD-002",
-    name: "Initial Setup Work",
-    projectId: "2",
-    projectName: "FG",
-  }
-};
 
 const OrderItems = () => {
   const { projectId, orderId } = useParams<{ projectId: string; orderId: string }>();
@@ -49,7 +35,11 @@ const OrderItems = () => {
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
 
   const { addItem, getItemsByOrder } = useItems();
-  const orderData = ordersData[orderId as keyof typeof ordersData];
+  const { orders } = useOrders();
+  const { projects } = useProjects();
+  
+  const orderData = orders.find(o => o.id === orderId);
+  const project = projects.find(p => p.id === Number(projectId));
   const items = getItemsByOrder(orderId || "");
 
   if (!orderData) {
@@ -118,7 +108,7 @@ const OrderItems = () => {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold text-foreground mb-2">{orderData.name}</h1>
-              <p className="text-muted-foreground">Order #{orderId} • {orderData.projectName}</p>
+              <p className="text-muted-foreground">Order #{orderId} • {project?.name || "Unknown Project"}</p>
             </div>
             <div className="flex gap-2">
               <Button 
