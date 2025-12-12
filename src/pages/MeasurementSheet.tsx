@@ -350,8 +350,8 @@ const MeasurementSheet = () => {
                     </td>
                     {milestoneWeights.map((milestone: any) => {
                       const milestoneTotal = rows.reduce((sum, row) => {
-                        const val = row.milestoneEntries?.[milestone.id];
-                        return sum + (val ? parseFloat(val) || 0 : 0);
+                        const hasEntry = row.milestoneEntries?.[milestone.id];
+                        return hasEntry ? sum + row.weight : sum;
                       }, 0);
                       return (
                         <td key={milestone.id} className="border border-border p-2 text-center text-sm font-bold" 
