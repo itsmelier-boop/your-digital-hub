@@ -11,7 +11,7 @@ export interface MeasurementRow {
   thickness: number;
   qty: number;
   weight: number;
-  milestoneEntries?: Record<string, number>;
+  milestoneEntries?: Record<string, string>;
 }
 
 export interface MeasurementSheet {

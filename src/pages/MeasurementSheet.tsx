@@ -313,11 +313,10 @@ const MeasurementSheet = () => {
                       {milestoneWeights.map((milestone: any) => (
                         <td key={milestone.id} className="border border-border p-1">
                           <Input
-                            type="number"
-                            step="0.001"
+                            type="text"
                             value={row.milestoneEntries?.[milestone.id] ?? ''}
                             onChange={(e) => {
-                              const value = e.target.value ? parseFloat(e.target.value) : undefined;
+                              const value = e.target.value || undefined;
                               const newEntries = { ...row.milestoneEntries, [milestone.id]: value };
                               if (value === undefined) delete newEntries[milestone.id];
                               updateRow(row.id, 'milestoneEntries', newEntries);
@@ -350,9 +349,10 @@ const MeasurementSheet = () => {
                       {totalWeight.toFixed(3)}
                     </td>
                     {milestoneWeights.map((milestone: any) => {
-                      const milestoneTotal = rows.reduce((sum, row) => 
-                        sum + (row.milestoneEntries?.[milestone.id] || 0), 0
-                      );
+                      const milestoneTotal = rows.reduce((sum, row) => {
+                        const val = row.milestoneEntries?.[milestone.id];
+                        return sum + (val ? parseFloat(val) || 0 : 0);
+                      }, 0);
                       return (
                         <td key={milestone.id} className="border border-border p-2 text-center text-sm font-bold" 
                             style={{ color: milestone.name.toLowerCase().includes('supply') ? '#16a34a' : '#9333ea' }}>
